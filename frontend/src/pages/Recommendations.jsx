@@ -41,9 +41,6 @@ function UniversityCard({ university }) {
           <span className="font-medium">Min GPA:</span> {university.min_gpa}
         </p>
         <p>
-          <span className="font-medium">Tuition:</span> {university.tuition}
-        </p>
-        <p>
           <span className="font-medium">Deadline:</span>{" "}
           {new Date(university.deadline).toLocaleDateString()}
         </p>
