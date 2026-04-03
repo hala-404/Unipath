@@ -18,6 +18,27 @@ body {
   min-height: 100vh;
   background-color: #f8fafc;
 }
+
 html {
   scroll-behavior: smooth;
+}
+
+/* ── RTL support ── */
+[dir="rtl"] {
+  font-family: "Segoe UI", Tahoma, "Noto Sans Arabic", "Noto Sans SC", sans-serif;
+}
+
+[dir="rtl"] input,
+[dir="rtl"] select,
+[dir="rtl"] textarea {
+  text-align: right;
+}
+
+/* Flip certain layout utilities for RTL */
+[dir="rtl"] .ms-auto {
+  margin-inline-start: auto;
+}
+
+[dir="rtl"] .me-auto {
+  margin-inline-end: auto;
 }

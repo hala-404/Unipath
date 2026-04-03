@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../api/auth";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,20 +33,18 @@ export default function Login() {
 
   return (
     <div className="mx-auto max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
-      <h1 className="text-2xl font-bold text-slate-900">Login</h1>
-      <p className="mt-2 text-sm text-slate-600">
-        Sign in to access your UniPath dashboard.
-      </p>
+      <h1 className="text-2xl font-bold text-slate-900">{t("login.title")}</h1>
+      <p className="mt-2 text-sm text-slate-600">{t("login.subtitle")}</p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
-            Email
+            {t("login.emailLabel")}
           </label>
           <input
             type="email"
             className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500"
-            placeholder="test@unipath.com"
+            placeholder={t("login.emailPlaceholder")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -53,12 +53,12 @@ export default function Login() {
 
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
-            Password
+            {t("login.passwordLabel")}
           </label>
           <input
             type="password"
             className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500"
-            placeholder="Enter your password"
+            placeholder={t("login.passwordPlaceholder")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -76,14 +76,14 @@ export default function Login() {
           disabled={loading}
           className="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {loading ? "Signing in..." : "Login"}
+          {loading ? t("login.submitting") : t("login.submit")}
         </button>
       </form>
 
       <p className="mt-4 text-sm text-slate-600">
-        Don’t have an account?{" "}
+        {t("login.noAccount")}{" "}
         <Link to="/register" className="font-medium text-blue-600 hover:underline">
-          Register
+          {t("login.registerLink")}
         </Link>
       </p>
     </div>
