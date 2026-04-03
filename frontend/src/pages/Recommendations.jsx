@@ -49,12 +49,27 @@ function UniversityCard({ university }) {
         </p>
       </div>
 
-      <button
-        onClick={handleAdd}
-        className="mt-4 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-      >
-        Add to Tracker
-      </button>
+      <div className="mt-4 flex gap-3">
+        {/* Apply Button */}
+        {university.website_url && (
+          <a
+            href={university.website_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+          >
+            Apply Now
+          </a>
+        )}
+
+        {/* Tracker Button */}
+        <button
+          onClick={handleAdd}
+          className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        >
+          Add to Tracker
+        </button>
+      </div>
     </div>
   );
 }
