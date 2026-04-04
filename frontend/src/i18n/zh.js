@@ -6,6 +6,7 @@ const zh = {
   nav: {
     brand: "UniPath",
     home: "首页",
+    compare: "对比",
     recommendations: "推荐",
     tracker: "进度追踪",
     profile: "个人资料",

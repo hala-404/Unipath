@@ -6,9 +6,16 @@ function classifyRisk(userGpa, minGpa, acceptanceRate) {
 
   const gpaGap = userGpa - minGpa;
 
-  if (gpaGap >= 0.3) return { label: "Safe", color: "green" };
+  if (gpaGap >= 0.5) return { label: "Safe", color: "green" };
   if (gpaGap >= 0.0) return { label: "Match", color: "amber" };
   return { label: "Reach", color: "red" };
+}
+
+function getRiskOrder(label) {
+  if (label === "Match") return 1;
+  if (label === "Safe") return 2;
+  if (label === "Reach") return 3;
+  return 4;
 }
 
 // ── Weighted fit score (0–100) with breakdown ──
@@ -89,7 +96,12 @@ async function getRecommendations(req, res) {
         ? Number(gpa)
         : null;
 
-    const result = await pool.query("SELECT * FROM universities");
+    const result = await pool.query(`
+      SELECT *
+      FROM universities
+      WHERE deadline >= CURRENT_DATE
+      ORDER BY deadline ASC
+    `);
     const universities = result.rows;
 
     // ── 1. Exact matches (all filters match) ──

@@ -10,6 +10,7 @@ import Profile from "./pages/Profile";
 import Recommendations from "./pages/Recommendations";
 import Tracker from "./pages/Tracker";
 import ChatPage from "./pages/ChatPage";
+import Compare from "./pages/Compare";
 
 export default function App() {
   const location = useLocation();
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="/recommendations" element={<Recommendations />} />
             <Route path="/tracker" element={<Tracker />} />
             <Route path="/chat" element={<ChatPage />} />
+            <Route path="/compare" element={<Compare />} />
           </Routes>
         </div>
       </div>

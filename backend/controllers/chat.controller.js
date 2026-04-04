@@ -1,13 +1,27 @@
+/**
+ * UniPath Action-Based Chat Controller
+ * 
+ * Instead of a form-filling state machine, this uses an AI agent that:
+ * 1. Understands user intent
+ * 2. Decides which action(s) to take
+ * 3. Executes actions against the database
+ * 4. Formats a natural response
+ */
+
 const axios = require("axios");
 const pool = require("../db/pool");
 
-async function callOpenRouter(messages) {
+// ============================================
+// AI MODEL CONFIGURATION
+// ============================================
+
+async function callAI(messages, jsonMode = false) {
   const response = await axios.post(
     "https://openrouter.ai/api/v1/chat/completions",
     {
       model: "meta-llama/llama-3-8b-instruct",
       messages,
-      temperature: 0.3, // Slightly higher for more natural responses
+      temperature: jsonMode ? 0.1 : 0.4,
     },
     {
       headers: {
@@ -16,517 +30,729 @@ async function callOpenRouter(messages) {
       },
     }
   );
-
   return response.data.choices[0].message.content;
 }
 
-function safeJsonParse(text) {
+// ============================================
+// ACTION DEFINITIONS
+// ============================================
+
+const ACTIONS = {
+  // Search for universities with filters
+  SEARCH_UNIVERSITIES: "search_universities",
+  
+  // Get recommendations based on user profile
+  GET_RECOMMENDATIONS: "get_recommendations",
+  
+  // Compare universities or locations
+  COMPARE: "compare",
+  
+  // Get deadline information
+  CHECK_DEADLINES: "check_deadlines",
+  
+  // Update user preferences
+  UPDATE_PREFERENCES: "update_preferences",
+  
+  // Add university to tracker
+  ADD_TO_TRACKER: "add_to_tracker",
+  
+  // Remove from tracker
+  REMOVE_FROM_TRACKER: "remove_from_tracker",
+  
+  // Get tracker status
+  GET_TRACKER: "get_tracker",
+  
+  // General advice/guidance
+  GIVE_ADVICE: "give_advice",
+  
+  // Explain/describe something
+  EXPLAIN: "explain",
+  
+  // Greeting or casual conversation
+  CHAT: "chat",
+};
+
+// ============================================
+// INTENT DETECTION
+// ============================================
+
+async function detectIntent(message, profile, history) {
+  const prompt = `You are an intent classifier for a university application assistant.
+
+USER PROFILE:
+- GPA: ${profile.gpa ?? "Not set"}
+- Preferred City: ${profile.preferred_city ?? "Not set"}
+- Preferred Program: ${profile.preferred_program ?? "Not set"}
+- Preferred Language: ${profile.preferred_language ?? "Not set"}
+
+AVAILABLE ACTIONS:
+1. search_universities - Find universities matching criteria (city, country, program, language, gpa)
+2. get_recommendations - Get personalized recommendations based on profile
+3. compare - Compare universities, cities, or countries
+4. check_deadlines - Find upcoming deadlines
+5. update_preferences - Change user's saved preferences (gpa, city, program, language)
+6. add_to_tracker - Add a university to application tracker
+7. remove_from_tracker - Remove from tracker
+8. get_tracker - Show current tracker status
+9. give_advice - Provide application guidance, tips, strategy
+10. explain - Explain a concept, requirement, or process
+11. chat - Greeting, casual conversation, or unclear intent
+
+Analyze the user's message and extract:
+1. Primary action (one of the above)
+2. Parameters needed for that action
+3. Any secondary actions if the message implies multiple things
+
+RESPOND WITH JSON ONLY:
+{
+  "primary_action": "action_name",
+  "parameters": {
+    "gpa": number or null,
+    "program": "string or null",
+    "city": "string or null",
+    "country": "string or null",
+    "language": "string or null",
+    "university_name": "string or null",
+    "compare_items": ["item1", "item2"] or null,
+    "compare_type": "universities|cities|countries|programs" or null,
+    "advice_topic": "string or null",
+    "explain_topic": "string or null",
+    "deadline_filter": "upcoming|this_month|this_week" or null,
+    "update_field": "gpa|city|program|language" or null,
+    "update_value": "value" or null,
+    "limit": number or null
+  },
+  "secondary_actions": [],
+  "confidence": 0.0-1.0,
+  "needs_clarification": false,
+  "clarification_question": null
+}
+
+RECENT CONVERSATION:
+${history.slice(-4).map(m => `${m.role}: ${m.content}`).join('\n')}
+
+USER MESSAGE: "${message}"
+
+Return ONLY valid JSON, no explanation.`;
+
+  const response = await callAI([{ role: "system", content: prompt }], true);
+  
   try {
-    return JSON.parse(text);
-  } catch {
-    return null;
+    // Clean response - remove any markdown code blocks
+    let cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch (e) {
+    console.error("Intent parse error:", e.message, "Response:", response);
+    return {
+      primary_action: "chat",
+      parameters: {},
+      confidence: 0.5,
+      needs_clarification: false
+    };
   }
 }
 
-function normalizeText(text = "") {
-  return text.toLowerCase().trim();
+// ============================================
+// ACTION HANDLERS
+// ============================================
+
+async function executeAction(action, params, profile, userId) {
+  switch (action) {
+    case ACTIONS.SEARCH_UNIVERSITIES:
+      return await searchUniversities(params, profile);
+    
+    case ACTIONS.GET_RECOMMENDATIONS:
+      return await getRecommendations(params, profile);
+    
+    case ACTIONS.COMPARE:
+      return await compareItems(params, profile);
+    
+    case ACTIONS.CHECK_DEADLINES:
+      return await checkDeadlines(params, profile);
+    
+    case ACTIONS.UPDATE_PREFERENCES:
+      return await updatePreferences(params, userId);
+    
+    case ACTIONS.ADD_TO_TRACKER:
+      return await addToTracker(params, userId);
+    
+    case ACTIONS.REMOVE_FROM_TRACKER:
+      return await removeFromTracker(params, userId);
+    
+    case ACTIONS.GET_TRACKER:
+      return await getTracker(userId);
+    
+    case ACTIONS.GIVE_ADVICE:
+      return { type: "advice", topic: params.advice_topic };
+    
+    case ACTIONS.EXPLAIN:
+      return { type: "explain", topic: params.explain_topic };
+    
+    case ACTIONS.CHAT:
+    default:
+      return { type: "chat" };
+  }
 }
 
-function messageHasAny(message, keywords) {
-  const lower = normalizeText(message);
-  return keywords.some((word) => lower.includes(word));
-}
+// ============================================
+// DATABASE ACTIONS
+// ============================================
 
-/**
- * Check if user is asking for alternatives/different options
- */
-function wantsAlternatives(message) {
-  const lower = normalizeText(message);
-  const alternativeKeywords = [
-    "another", "other", "different", "else", "alternative",
-    "more options", "what else", "something else", "besides",
-    "instead", "not that", "give me more", "any other"
-  ];
-  return alternativeKeywords.some((kw) => lower.includes(kw));
-}
+async function searchUniversities(params, profile) {
+  try {
+    // Safely handle params and profile
+    const safeParams = params || {};
+    const safeProfile = profile || {};
+    
+    const conditions = ["deadline >= CURRENT_DATE"];
+    const values = [];
+    let idx = 1;
 
-/**
- * Extract majors that have already been mentioned in conversation history
- */
-function extractMentionedMajors(history, availableMajors) {
-  const mentioned = new Set();
-  const allText = history
-    .map((msg) => msg.content || "")
-    .join(" ")
-    .toLowerCase();
+    // Use provided params or fall back to profile
+    const gpa = safeParams.gpa ?? safeProfile.gpa ?? null;
+    const city = safeParams.city ?? null;
+    const country = safeParams.country ?? null;
+    const program = safeParams.program ?? null;
+    const language = safeParams.language ?? null;
+    const limit = safeParams.limit ?? 10;
 
-  availableMajors.forEach((major) => {
-    if (allText.includes(major.toLowerCase())) {
-      mentioned.add(major);
+    if (gpa) {
+      conditions.push(`min_gpa <= $${idx}`);
+      values.push(gpa);
+      idx++;
     }
+
+    if (city) {
+      conditions.push(`city ILIKE $${idx}`);
+      values.push(`%${city}%`);
+      idx++;
+    }
+
+    if (country) {
+      conditions.push(`country ILIKE $${idx}`);
+      values.push(`%${country}%`);
+      idx++;
+    }
+
+    if (program) {
+      conditions.push(`program ILIKE $${idx}`);
+      values.push(`%${program}%`);
+      idx++;
+    }
+
+    if (language) {
+      conditions.push(`language ILIKE $${idx}`);
+      values.push(`%${language}%`);
+      idx++;
+    }
+
+    const sql = `
+      SELECT id, name, city, country, program, language, min_gpa, deadline
+      FROM universities
+      WHERE ${conditions.join(" AND ")}
+      ORDER BY deadline ASC
+      LIMIT ${limit}
+    `;
+
+    const result = await pool.query(sql, values);
+    
+    return {
+      type: "universities",
+      data: result.rows,
+      filters_used: { gpa, city, country, program, language },
+      total: result.rows.length,
+      message: result.rows.length > 0 
+        ? `Found ${result.rows.length} universities`
+        : "No universities found matching your criteria"
+    };
+  } catch (err) {
+    console.error("Search universities error:", err);
+    return { type: "error", message: `Database error: ${err.message}` };
+  }
+}
+
+async function getRecommendations(params, profile) {
+  try {
+    // Safely handle params and profile
+    const safeParams = params || {};
+    const safeProfile = profile || {};
+    
+    // Get all universities and score them
+    const result = await pool.query(`
+      SELECT * FROM universities 
+      WHERE deadline >= CURRENT_DATE
+      ORDER BY deadline ASC
+    `);
+
+    const userGpa = safeParams.gpa ?? safeProfile.gpa ?? null;
+    const city = safeParams.city ?? safeProfile.preferred_city ?? null;
+    const program = safeParams.program ?? safeProfile.preferred_program ?? null;
+    const language = safeParams.language ?? safeProfile.preferred_language ?? null;
+
+  const scored = result.rows.map(uni => {
+    let score = 0;
+    const reasons = [];
+
+    // GPA fit (40 points max)
+    if (userGpa) {
+      const gap = userGpa - Number(uni.min_gpa);
+      if (gap >= 0.3) {
+        score += 40;
+        reasons.push(`Your GPA exceeds minimum by ${gap.toFixed(1)}`);
+      } else if (gap >= 0) {
+        score += 28;
+        reasons.push("GPA meets minimum requirement");
+      } else {
+        score += 10;
+        reasons.push(`GPA is ${Math.abs(gap).toFixed(1)} below minimum (reach school)`);
+      }
+    }
+
+    // Program match (25 points)
+    if (program && uni.program.toLowerCase().includes(program.toLowerCase())) {
+      score += 25;
+      reasons.push("Matches your preferred program");
+    }
+
+    // City match (20 points)
+    if (city && uni.city.toLowerCase().includes(city.toLowerCase())) {
+      score += 20;
+      reasons.push("Located in your preferred city");
+    }
+
+    // Language match (15 points)
+    if (language && uni.language.toLowerCase().includes(language.toLowerCase())) {
+      score += 15;
+      reasons.push("Taught in your preferred language");
+    }
+
+    // Risk classification
+    let risk = "Unknown";
+    if (userGpa) {
+      const gap = userGpa - Number(uni.min_gpa);
+      if (gap >= 0.5) risk = "Safe";
+      else if (gap >= 0) risk = "Match";
+      else risk = "Reach";
+    }
+
+    return { ...uni, score, reasons, risk };
   });
 
-  return Array.from(mentioned);
+  // Sort by score and return top results
+  scored.sort((a, b) => b.score - a.score);
+
+    const topResults = scored.slice(0, safeParams.limit ?? 10);
+    
+    return {
+      type: "recommendations",
+      data: topResults,
+      profile_used: { gpa: userGpa, city, program, language },
+      total: topResults.length,
+      message: topResults.length > 0 
+        ? `Found ${topResults.length} personalized recommendations`
+        : "No recommendations found. Try updating your profile preferences."
+    };
+  } catch (err) {
+    console.error("Get recommendations error:", err);
+    return { type: "error", message: `Database error: ${err.message}` };
+  }
 }
 
-/**
- * Extract user interests from entire conversation history
- */
-function extractInterestsFromHistory(history) {
-  const allText = history
-    .filter((msg) => msg.role === "user")
-    .map((msg) => msg.content || "")
-    .join(" ")
-    .toLowerCase();
+async function compareItems(params, profile) {
+  try {
+    const safeParams = params || {};
+    const items = safeParams.compare_items || [];
+    const compareType = safeParams.compare_type || "universities";
 
-  const interests = [];
+    if (items.length < 2) {
+      return { type: "error", message: "Need at least 2 items to compare. Please specify what you'd like to compare." };
+    }
 
-  if (messageHasAny(allText, ["math", "mathematics", "statistics", "analysis", "numbers"])) {
-    interests.push("math");
-  }
-  if (messageHasAny(allText, ["coding", "programming", "code", "developer", "software"])) {
-    interests.push("coding");
-  }
-  if (messageHasAny(allText, ["business", "management", "finance", "marketing", "economics"])) {
-    interests.push("business");
-  }
-  if (messageHasAny(allText, ["design", "creative", "art", "media", "visual"])) {
-    interests.push("design");
-  }
-  if (messageHasAny(allText, ["biology", "health", "medical", "medicine", "science"])) {
-    interests.push("health");
-  }
-  if (messageHasAny(allText, ["engineer", "engineering", "machines", "mechanical", "build"])) {
-    interests.push("engineering");
-  }
-  if (messageHasAny(allText, ["data", "analytics", "ai", "machine learning"])) {
-    interests.push("data");
-  }
+    if (compareType === "universities") {
+      const result = await pool.query(
+        `SELECT * FROM universities WHERE name ILIKE ANY($1)`,
+        [items.map(i => `%${i}%`)]
+      );
+      return { type: "comparison", compareType, data: result.rows, items };
+    }
 
-  return interests;
+    if (compareType === "cities" || compareType === "countries") {
+      const field = compareType === "cities" ? "city" : "country";
+      const results = {};
+      
+      for (const item of items) {
+        const result = await pool.query(
+          `SELECT program, COUNT(*) as count, MIN(min_gpa) as min_gpa_required, 
+                  MIN(deadline) as earliest_deadline
+           FROM universities 
+           WHERE ${field} ILIKE $1 AND deadline >= CURRENT_DATE
+           GROUP BY program`,
+          [`%${item}%`]
+        );
+        results[item] = result.rows;
+      }
+      
+      return { type: "comparison", compareType, data: results, items };
+    }
+
+    return { type: "error", message: "Unknown comparison type" };
+  } catch (err) {
+    console.error("Compare items error:", err);
+    return { type: "error", message: `Database error: ${err.message}` };
+  }
 }
 
-function scoreMajorsFromMessage(message, availableMajors, history = [], excludeMajors = []) {
-  const lower = normalizeText(message);
+async function checkDeadlines(params, profile) {
+  try {
+    // Safely handle params
+    const safeParams = params || {};
+    const safeProfile = profile || {};
+    
+    let dateFilter = "";
 
-  const majorScores = {};
-  availableMajors.forEach((major) => {
-    // Skip majors we want to exclude (already mentioned)
-    if (excludeMajors.some((ex) => normalizeText(ex) === normalizeText(major))) {
-      majorScores[major] = -100; // Negative score to exclude
-    } else {
-      majorScores[major] = 0;
+    if (safeParams.deadline_filter === "this_week") {
+      dateFilter = "AND deadline <= CURRENT_DATE + INTERVAL '7 days'";
+    } else if (safeParams.deadline_filter === "this_month") {
+      dateFilter = "AND deadline <= CURRENT_DATE + INTERVAL '30 days'";
     }
-  });
 
-  const boostIfExists = (majorName, points) => {
-    const found = availableMajors.find(
-      (m) => normalizeText(m) === normalizeText(majorName)
-    );
-    if (found && majorScores[found] >= 0) {
-      majorScores[found] += points;
+    // Build query
+    const conditions = ["deadline >= CURRENT_DATE"];
+    const values = [];
+    let idx = 1;
+
+    if (safeProfile.gpa) {
+      conditions.push(`min_gpa <= $${idx}`);
+      values.push(safeProfile.gpa);
+      idx++;
     }
+
+    const sql = `
+      SELECT name, city, country, program, language, min_gpa, deadline,
+             (deadline - CURRENT_DATE) as days_left
+      FROM universities
+      WHERE ${conditions.join(" AND ")} ${dateFilter}
+      ORDER BY deadline ASC
+      LIMIT 15
+    `;
+
+    const result = await pool.query(sql, values);
+
+    return {
+      type: "deadlines",
+      data: result.rows,
+      total: result.rows.length,
+      filter: safeParams.deadline_filter || "upcoming",
+      message: result.rows.length > 0 
+        ? `Found ${result.rows.length} upcoming deadlines`
+        : "No upcoming deadlines found matching your criteria"
+    };
+  } catch (err) {
+    console.error("Check deadlines error:", err);
+    return { type: "error", message: `Database error: ${err.message}` };
+  }
+}
+
+async function updatePreferences(params, userId) {
+  const field = params.update_field;
+  const value = params.update_value;
+
+  if (!field || value === undefined) {
+    return { type: "error", message: "Missing field or value to update" };
+  }
+
+  const fieldMap = {
+    gpa: "gpa",
+    city: "preferred_city",
+    program: "preferred_program",
+    language: "preferred_language"
   };
 
-  // Check current message AND history for interests
-  const interests = extractInterestsFromHistory([...history, { role: "user", content: message }]);
-
-  if (interests.includes("math")) {
-    boostIfExists("Data Science", 3);
-    boostIfExists("Computer Science", 2);
-    boostIfExists("Mathematics", 3);
-    boostIfExists("Statistics", 3);
-    boostIfExists("Business Analytics", 2);
-    boostIfExists("Economics", 2);
-    boostIfExists("Finance", 2);
-    boostIfExists("Actuarial Science", 2);
+  const dbField = fieldMap[field];
+  if (!dbField) {
+    return { type: "error", message: "Invalid preference field" };
   }
 
-  if (interests.includes("coding")) {
-    boostIfExists("Computer Science", 3);
-    boostIfExists("Data Science", 2);
-    boostIfExists("Software Engineering", 3);
-    boostIfExists("Information Technology", 2);
-    boostIfExists("Cybersecurity", 2);
-  }
+  await pool.query(
+    `UPDATE users SET ${dbField} = $1 WHERE id = $2`,
+    [value, userId]
+  );
 
-  if (interests.includes("business")) {
-    boostIfExists("Business", 3);
-    boostIfExists("Business Analytics", 2);
-    boostIfExists("Marketing", 2);
-    boostIfExists("Finance", 2);
-    boostIfExists("Economics", 2);
-    boostIfExists("Management", 2);
-  }
-
-  if (interests.includes("design")) {
-    boostIfExists("Design", 3);
-    boostIfExists("Graphic Design", 3);
-    boostIfExists("UX Design", 3);
-    boostIfExists("Architecture", 2);
-    boostIfExists("Media Studies", 2);
-  }
-
-  if (interests.includes("health")) {
-    boostIfExists("Biology", 3);
-    boostIfExists("Public Health", 2);
-    boostIfExists("Nursing", 2);
-    boostIfExists("Medicine", 3);
-    boostIfExists("Pharmacy", 2);
-    boostIfExists("Psychology", 2);
-  }
-
-  if (interests.includes("engineering")) {
-    boostIfExists("Engineering", 3);
-    boostIfExists("Mechanical Engineering", 3);
-    boostIfExists("Electrical Engineering", 3);
-    boostIfExists("Civil Engineering", 2);
-    boostIfExists("Computer Engineering", 2);
-  }
-
-  if (interests.includes("data")) {
-    boostIfExists("Data Science", 3);
-    boostIfExists("Business Analytics", 2);
-    boostIfExists("Statistics", 2);
-    boostIfExists("Computer Science", 2);
-  }
-
-  const sortedMajors = Object.entries(majorScores)
-    .filter(([, score]) => score > 0)
-    .sort((a, b) => b[1] - a[1]);
-
-  return sortedMajors;
+  return {
+    type: "preference_updated",
+    field,
+    value,
+    message: `Your ${field} preference has been updated to "${value}"`
+  };
 }
 
-/**
- * Format AI response into clean, readable paragraphs
- * Forces line breaks every 2-3 sentences for readability
- */
-function formatResponse(text) {
-  if (!text) return "";
-
-  let formatted = text;
-
-  // Fix broken decimals like "3. 9"
-  formatted = formatted.replace(/(\d)\.\s+(\d)/g, "$1.$2");
-
-  // Protect decimals temporarily (3.9)
-  formatted = formatted.replace(/(\d)\.(\d)/g, "$1<<<DOT>>>$2");
-
-  // Split ONLY on sentence endings (. ? !)
-  const sentences = formatted
-    .split(/(?<=[.!?])\s+/)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
-
-  // Group sentences (2 sentences per paragraph)
-  const paragraphs = [];
-  for (let i = 0; i < sentences.length; i += 2) {
-    paragraphs.push(sentences.slice(i, i + 2).join(" "));
+async function addToTracker(params, userId) {
+  const universityName = params.university_name;
+  
+  if (!universityName) {
+    return { type: "error", message: "Which university would you like to add?" };
   }
 
-  formatted = paragraphs.join("\n\n");
+  try {
+    // Find the university - try multiple matching strategies
+    let uniResult = await pool.query(
+      `SELECT id, name, city, country, program FROM universities WHERE name ILIKE $1 LIMIT 1`,
+      [`%${universityName}%`]
+    );
 
-  // Restore decimals
-  formatted = formatted.replace(/<<<DOT>>>/g, ".");
+    // If no match, try matching individual words
+    if (uniResult.rows.length === 0) {
+      const words = universityName.split(' ').filter(w => w.length > 2);
+      if (words.length > 0) {
+        const wordPatterns = words.map(w => `%${w}%`).join('%');
+        uniResult = await pool.query(
+          `SELECT id, name, city, country, program FROM universities WHERE name ILIKE $1 LIMIT 1`,
+          [wordPatterns]
+        );
+      }
+    }
 
-  // Clean spacing
-  formatted = formatted.replace(/\n{3,}/g, "\n\n").trim();
+    if (uniResult.rows.length === 0) {
+      // Return available universities as suggestions
+      const suggestions = await pool.query(
+        `SELECT DISTINCT name FROM universities ORDER BY name LIMIT 5`
+      );
+      return { 
+        type: "error", 
+        message: `Couldn't find a university matching "${universityName}". Some available universities: ${suggestions.rows.map(r => r.name).join(', ')}` 
+      };
+    }
 
-  return formatted;
+    const uni = uniResult.rows[0];
+
+    // Check if already tracked
+    const existing = await pool.query(
+      `SELECT id FROM applications WHERE user_id = $1 AND university_id = $2`,
+      [userId, uni.id]
+    );
+
+    if (existing.rows.length > 0) {
+      return { 
+        type: "already_tracked", 
+        university: uni.name,
+        message: `${uni.name} is already in your tracker!`
+      };
+    }
+
+    // Add to tracker (matching the actual table schema - no created_at, status is 'Not Started')
+    await pool.query(
+      `INSERT INTO applications (user_id, university_id, status)
+       VALUES ($1, $2, $3)`,
+      [userId, uni.id, 'Not Started']
+    );
+
+    return {
+      type: "added_to_tracker",
+      university: uni.name,
+      program: uni.program,
+      location: `${uni.city}, ${uni.country}`,
+      message: `Added ${uni.name} (${uni.program}) to your application tracker!`
+    };
+  } catch (err) {
+    console.error("Add to tracker error:", err);
+    return { type: "error", message: `Database error: ${err.message}` };
+  }
 }
+
+async function removeFromTracker(params, userId) {
+  const universityName = params.university_name;
+  
+  if (!universityName) {
+    return { type: "error", message: "Which university would you like to remove?" };
+  }
+
+  try {
+    // First find the university
+    const uniResult = await pool.query(
+      `SELECT id, name FROM universities WHERE name ILIKE $1 LIMIT 1`,
+      [`%${universityName}%`]
+    );
+
+    if (uniResult.rows.length === 0) {
+      return { type: "error", message: `Couldn't find a university matching "${universityName}"` };
+    }
+
+    const uni = uniResult.rows[0];
+
+    const result = await pool.query(
+      `DELETE FROM applications 
+       WHERE user_id = $1 AND university_id = $2
+       RETURNING id`,
+      [userId, uni.id]
+    );
+
+    if (result.rows.length === 0) {
+      return { type: "error", message: `${uni.name} is not in your tracker` };
+    }
+
+    return {
+      type: "removed_from_tracker",
+      university: uni.name,
+      message: `Removed ${uni.name} from your tracker`
+    };
+  } catch (err) {
+    console.error("Remove from tracker error:", err);
+    return { type: "error", message: `Database error: ${err.message}` };
+  }
+}
+
+async function getTracker(userId) {
+  try {
+    const result = await pool.query(
+      `SELECT 
+         a.id as application_id,
+         a.status,
+         u.id as university_id,
+         u.name, 
+         u.city, 
+         u.country, 
+         u.program, 
+         u.deadline,
+         u.min_gpa,
+         u.language
+       FROM applications a
+       JOIN universities u ON a.university_id = u.id
+       WHERE a.user_id = $1
+       ORDER BY u.deadline ASC`,
+      [userId]
+    );
+
+    return {
+      type: "tracker",
+      data: result.rows,
+      total: result.rows.length,
+      message: result.rows.length > 0 
+        ? `You're tracking ${result.rows.length} universities`
+        : "Your tracker is empty. Would you like me to recommend some universities to add?"
+    };
+  } catch (err) {
+    console.error("Get tracker error:", err);
+    return { type: "error", message: `Database error: ${err.message}` };
+  }
+}
+
+// ============================================
+// RESPONSE GENERATION
+// ============================================
+
+async function generateResponse(actionResult, intent, profile, message, history) {
+  const systemPrompt = `You are UniPath Assistant, a friendly and knowledgeable university application advisor.
+
+CURRENT ACTION RESULT:
+${JSON.stringify(actionResult, null, 2)}
+
+USER PROFILE:
+- GPA: ${profile.gpa ?? "Not set"}
+- Preferred City: ${profile.preferred_city ?? "Not set"}
+- Preferred Program: ${profile.preferred_program ?? "Not set"}
+- Preferred Language: ${profile.preferred_language ?? "Not set"}
+
+INTENT DETECTED:
+${JSON.stringify(intent, null, 2)}
+
+RESPONSE GUIDELINES:
+1. Be conversational and helpful, not robotic
+2. If showing universities, summarize the key findings first
+3. Mention relevant deadlines if they're coming up soon
+4. Give actionable advice when appropriate
+5. Keep responses concise - 2-3 short paragraphs max
+6. If no results found, suggest alternatives or ask for different criteria
+7. Use the actual data from ACTION RESULT - don't make up universities
+8. If the action type is "chat" or "advice" or "explain", respond naturally without data
+
+FORMAT:
+- Don't use bullet points unless listing 4+ items
+- Don't use headers
+- Write in natural paragraphs
+- End with a helpful follow-up question or suggestion when appropriate
+
+Respond to the user's message naturally using the action result data.`;
+
+  const response = await callAI([
+    { role: "system", content: systemPrompt },
+    ...history.slice(-4),
+    { role: "user", content: message }
+  ]);
+
+  return response;
+}
+
+// ============================================
+// MAIN CONTROLLER
+// ============================================
 
 const chatWithAdvisor = async (req, res) => {
   try {
+    const userId = req.user.user_id;
     const { message, history = [] } = req.body;
 
     if (!message || !message.trim()) {
       return res.status(400).json({ message: "Message is required." });
     }
 
-    const userId = req.user.user_id;
-
-    // 1. Load saved user profile
-    const profileResult = await pool.query(
-      `
-      SELECT gpa, preferred_city, preferred_program, preferred_language
-      FROM users
-      WHERE id = $1
-      `,
+    // Get user profile
+    const profileRes = await pool.query(
+      `SELECT gpa, preferred_city, preferred_program, preferred_language
+       FROM users WHERE id = $1`,
       [userId]
     );
+    const profile = profileRes.rows[0] || {};
 
-    const profile = profileResult.rows[0] || {};
+    // Step 1: Detect intent
+    console.log("=== Detecting Intent ===");
+    const intent = await detectIntent(message, profile, history);
+    console.log("Intent:", JSON.stringify(intent, null, 2));
 
-    // 2. Load available majors from universities table
-    const majorsResult = await pool.query(`
-      SELECT DISTINCT program
-      FROM universities
-      WHERE program IS NOT NULL
-      ORDER BY program ASC
-    `);
+    // Step 2: Handle clarification if needed
+    if (intent.needs_clarification && intent.clarification_question) {
+      return res.json({
+        reply: intent.clarification_question,
+        action: null,
+        data: null
+      });
+    }
 
-    const availableMajors = majorsResult.rows.map((row) => row.program);
-    const availableMajorsText =
-      availableMajors.length > 0
-        ? availableMajors.join(", ")
-        : "No majors available right now.";
+    // Step 3: Execute primary action
+    console.log("=== Executing Action ===");
+    const actionResult = await executeAction(
+      intent.primary_action,
+      intent.parameters,
+      profile,
+      userId
+    );
+    console.log("Action Result:", JSON.stringify(actionResult, null, 2));
 
-    // 3. Ask AI to extract structured search filters
-    const extractionPrompt = `
-You are an information extraction assistant.
+    // Step 4: Generate natural language response
+    console.log("=== Generating Response ===");
+    const reply = await generateResponse(actionResult, intent, profile, message, history);
 
-Available majors: ${availableMajorsText}
-
-Convert the user's message into JSON only.
-
-Return ONLY valid JSON.
-Do not add explanation.
-Do not use markdown.
-Do not wrap in backticks.
-
-Allowed schema:
-{
-  "intent": "university_search" | "deadline_question" | "general_guidance" | "major_guidance",
-  "city": string or null,
-  "city_mode": "exact" | "different_from_profile" | null,
-  "program": string or null,
-  "language": string or null,
-  "wants_alternatives": boolean,
-  "deadline_interest": boolean
-}
-
-Rules:
-- If the user asks for another city, set "city_mode" to "different_from_profile"
-- If the user mentions a city, set "city" to that city and "city_mode" to "exact"
-- If the user mentions a program or major, extract it into "program"
-- If the user mentions a language, extract it
-- If the message is about deadlines, set "deadline_interest" to true
-- If the message is asking about majors, suitable fields, another major, or best fit, use "major_guidance"
-- If the message is asking for universities, options, or matches, use "university_search"
-- If it is general advice, use "general_guidance"
-`;
-
-    const extractionRaw = await callOpenRouter([
-      { role: "system", content: extractionPrompt },
-      { role: "user", content: message },
-    ]);
-
-    const extracted = safeJsonParse(extractionRaw) || {
-      intent: "general_guidance",
-      city: null,
-      city_mode: null,
-      program: null,
-      language: null,
-      wants_alternatives: false,
-      deadline_interest: false,
+    // Step 5: Return response with optional data for UI rendering
+    const response = {
+      reply,
+      action: intent.primary_action,
+      data: actionResult.data || null,
+      meta: {
+        filters_used: actionResult.filters_used,
+        total: actionResult.total,
+        type: actionResult.type
+      }
     };
 
-    // Clean history early since we need it for major recommendations
-    const cleanedHistory = history
-      .filter(
-        (msg) =>
-          msg &&
-          (msg.role === "user" || msg.role === "assistant") &&
-          msg.content
-      )
-      .map((msg) => ({
-        role: msg.role,
-        content: String(msg.content),
-      }));
-
-    // 4. Major recommendation engine (BACKEND-CONTROLLED)
-    // Check if user wants alternatives to previously mentioned majors
-    const userWantsAlternatives = wantsAlternatives(message);
-    const alreadyMentionedMajors = extractMentionedMajors(cleanedHistory, availableMajors);
-
-    // If user wants alternatives, exclude already mentioned majors
-    const excludeList = userWantsAlternatives ? alreadyMentionedMajors : [];
-
-    const majorScores = scoreMajorsFromMessage(
-      message,
-      availableMajors,
-      cleanedHistory,
-      excludeList
-    );
-    let recommendedMajors = majorScores.slice(0, 3).map(([major]) => major);
-
-    // If no recommendations found and user wants alternatives, provide random alternatives
-    if (recommendedMajors.length === 0 && userWantsAlternatives) {
-      const remainingMajors = availableMajors.filter(
-        (m) => !alreadyMentionedMajors.some((ex) => normalizeText(ex) === normalizeText(m))
-      );
-      // Pick up to 3 random majors from remaining
-      recommendedMajors = remainingMajors
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 3);
+    // Include recommendations array for UI cards if applicable
+    if (actionResult.type === "universities" || actionResult.type === "recommendations") {
+      response.recommendations = actionResult.data;
     }
 
-    // If still no recommendations, try scoring without exclusions
-    if (recommendedMajors.length === 0) {
-      const fallbackScores = scoreMajorsFromMessage(message, availableMajors, cleanedHistory, []);
-      recommendedMajors = fallbackScores.slice(0, 3).map(([major]) => major);
-    }
+    return res.json(response);
 
-    // If user already has a preferred program and we're not looking for alternatives, include it
-    if (
-      !userWantsAlternatives &&
-      profile.preferred_program &&
-      availableMajors.some(
-        (m) => normalizeText(m) === normalizeText(profile.preferred_program)
-      ) &&
-      !recommendedMajors.some(
-        (m) => normalizeText(m) === normalizeText(profile.preferred_program)
-      )
-    ) {
-      recommendedMajors.unshift(profile.preferred_program);
-    }
-
-    const finalRecommendedMajors = [...new Set(recommendedMajors)].slice(0, 3);
-
-    // Build recommended majors text - if empty, tell AI to be honest
-    let recommendedMajorsText;
-    if (finalRecommendedMajors.length > 0) {
-      recommendedMajorsText = finalRecommendedMajors.map((m, i) => `${i + 1}. ${m}`).join("\n");
-    } else if (userWantsAlternatives && availableMajors.length <= 1) {
-      recommendedMajorsText = `IMPORTANT: The student wants alternative majors, but only "${availableMajors[0] || 'Data Science'}" is currently available in the system. Apologize and explain that more programs will be added soon.`;
-    } else {
-      recommendedMajorsText = "No suitable major recommendation is currently available.";
-    }
-
-    // 5. Merge profile defaults with extracted overrides for university search
-    const finalGpa = profile.gpa ?? null;
-    const finalProgram =
-      extracted.program ||
-      finalRecommendedMajors[0] ||
-      profile.preferred_program ||
-      null;
-    const finalLanguage = extracted.language || profile.preferred_language || null;
-
-    let universitiesQuery = `
-      SELECT name, city, country, program, language, min_gpa, deadline
-      FROM universities
-      WHERE
-        ($1::numeric IS NULL OR min_gpa <= $1)
-        AND ($2::text IS NULL OR city ILIKE '%' || $2 || '%')
-        AND ($3::text IS NULL OR program ILIKE '%' || $3 || '%')
-        AND ($4::text IS NULL OR language ILIKE '%' || $4 || '%')
-      ORDER BY deadline ASC NULLS LAST, min_gpa ASC, name ASC
-      LIMIT 10
-    `;
-
-    let cityForSearch = extracted.city || profile.preferred_city || null;
-    let queryParams = [finalGpa, cityForSearch, finalProgram, finalLanguage];
-
-    if (extracted.city_mode === "different_from_profile") {
-      universitiesQuery = `
-        SELECT name, city, country, program, language, min_gpa, deadline
-        FROM universities
-        WHERE
-          ($1::numeric IS NULL OR min_gpa <= $1)
-          AND ($2::text IS NULL OR city NOT ILIKE '%' || $2 || '%')
-          AND ($3::text IS NULL OR program ILIKE '%' || $3 || '%')
-          AND ($4::text IS NULL OR language ILIKE '%' || $4 || '%')
-        ORDER BY deadline ASC NULLS LAST, min_gpa ASC, name ASC
-        LIMIT 10
-      `;
-
-      queryParams = [
-        finalGpa,
-        profile.preferred_city || null,
-        finalProgram,
-        finalLanguage,
-      ];
-    }
-
-    const universitiesResult = await pool.query(universitiesQuery, queryParams);
-    const universities = universitiesResult.rows;
-
-    const universityList =
-      universities.length > 0
-        ? universities
-            .map((uni, index) => {
-              return `${index + 1}. ${uni.name} | ${uni.city}, ${uni.country} | Program: ${uni.program} | Language: ${uni.language} | Min GPA: ${uni.min_gpa} | Deadline: ${uni.deadline}`;
-            })
-            .join("\n")
-        : "No matching university options are currently available.";
-
-    // 6. Final AI explanation - IMPROVED PROMPT
-
-    const answerPrompt = `You are UniPath Assistant, a friendly and knowledgeable student advisor helping students find the right university and program.
-
-  CONVERSATION BEHAVIOR RULES:
-
-  - If the user says "yes", DO NOT repeat previous information
-  - Instead, CONTINUE to the next logical step
-
-  Examples:
-  - If you just recommended a university → give application steps
-  - If you just explained a program → give more detailed info (curriculum, process, requirements)
-  - If you already gave details → move forward (next steps, tips, deadlines)
-
-  - NEVER repeat the same recommendation unless the user asks again
-  - NEVER ask the same question twice
-  - Always move the conversation forward
-  - Avoid repeating the same university or major multiple times
-  - If the user says "yes", assume they want deeper or next-step information
-
-STUDENT PROFILE:
-- GPA: ${profile.gpa ?? "Not set"}
-- Preferred city: ${profile.preferred_city ?? "Not set"}
-- Preferred program: ${profile.preferred_program ?? "Not set"}
-- Preferred language: ${profile.preferred_language ?? "Not set"}
-
-USER REQUEST ANALYSIS:
-${JSON.stringify(extracted, null, 2)}
-
-USER WANTS ALTERNATIVES: ${userWantsAlternatives ? "YES - they asked for different/other options" : "NO"}
-
-RECOMMENDED MAJORS:
-${recommendedMajorsText}
-
-AVAILABLE UNIVERSITIES (use ONLY these):
-${universityList}
-
-STRICT RULES:
-1. ONLY mention majors from "RECOMMENDED MAJORS" section - do NOT invent others
-2. ONLY mention universities from "AVAILABLE UNIVERSITIES" section
-3. If the user asks for OTHER/DIFFERENT majors but you only have one to offer, APOLOGIZE and explain honestly that currently only limited programs are available, but more will be added soon
-4. Never mention "database", "system", "retrieved", or "provided list"
-5. Speak naturally like a helpful human advisor
-6. DO NOT keep repeating the same major if the user asked for something different
-
-RESPONSE FORMAT - THIS IS CRITICAL:
-- Write in SHORT paragraphs (2-3 sentences each)
-- Put a BLANK LINE between each paragraph
-- Start with a brief friendly opening (1 sentence)
-- Give your main advice in the middle paragraphs
-- End with ONE helpful follow-up question
-
-EXAMPLE WHEN USER ASKS FOR ALTERNATIVES BUT NONE AVAILABLE:
-I understand you'd like to explore other options! Unfortunately, at the moment our platform primarily focuses on Data Science programs.
-
-We're actively working on adding more programs like Computer Science, Business Analytics, and Statistics. These would be great fits for someone with your math background.
-
-In the meantime, would you like me to show you the Data Science universities available, or would you prefer to check back later when we have more options?
-
-NOW RESPOND TO THE USER'S MESSAGE:`;
-
-    let reply = await callOpenRouter([
-      { role: "system", content: answerPrompt },
-      ...cleanedHistory,
-      { role: "user", content: message },
-    ]);
-
-    // Apply formatting cleanup
-    reply = formatResponse(reply);
-
-    return res.status(200).json({ reply });
-  } catch (error) {
-    console.error("Chat error:", error.response?.data || error.message);
-    return res.status(500).json({
-      message: "Failed to get chatbot response.",
-    });
+  } catch (err) {
+    console.error("Chat error:", err);
+    return res.status(500).json({ error: err.message });
   }
 };
 
