@@ -384,6 +384,15 @@ Rules:
 
     const finalRecommendedMajors = [...new Set(recommendedMajors)].slice(0, 3);
 
+    // DEBUG: Log what majors are available and recommended
+    console.log("=== DEBUG: Major Recommendation ===");
+    console.log("Available majors in DB:", availableMajors);
+    console.log("User wants alternatives:", userWantsAlternatives);
+    console.log("Already mentioned majors:", alreadyMentionedMajors);
+    console.log("Exclude list:", excludeList);
+    console.log("Final recommended majors:", finalRecommendedMajors);
+    console.log("===================================");
+
     // Build recommended majors text - if empty, tell AI to be honest
     let recommendedMajorsText;
     if (finalRecommendedMajors.length > 0) {

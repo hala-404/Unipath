@@ -1,6 +1,5 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { LanguageProvider } from "./contexts/LanguageContext";
 import Navbar from "./components/Navbar";
 
 import Home from "./pages/Home";
@@ -20,22 +19,20 @@ export default function App() {
   }, [location.pathname]);
 
   return (
-    <LanguageProvider>
-      <div className="min-h-screen bg-slate-50">
-        <Navbar />
+    <div className="min-h-screen bg-slate-50">
+      <Navbar />
 
-        <div className="mx-auto max-w-6xl px-6 py-8">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/recommendations" element={<Recommendations />} />
-            <Route path="/tracker" element={<Tracker />} />
-            <Route path="/chat" element={<ChatPage />} />
-          </Routes>
-        </div>
+      <div className="mx-auto max-w-6xl px-6 py-8">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/recommendations" element={<Recommendations />} />
+          <Route path="/tracker" element={<Tracker />} />
+          <Route path="/chat" element={<ChatPage />} />
+        </Routes>
       </div>
-    </LanguageProvider>
+    </div>
   );
 }

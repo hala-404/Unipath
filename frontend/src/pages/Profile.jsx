@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchProfile, updateProfile } from "../api/profile";
-import { useLanguage } from "../contexts/LanguageContext";
 
 export default function Profile() {
-  const { t } = useLanguage();
-
   const [formData, setFormData] = useState({
     gpa: "",
     preferred_city: "",
@@ -74,20 +71,22 @@ export default function Profile() {
   if (loading) {
     return (
       <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
-        <p className="text-slate-600">{t("profile.loading")}</p>
+        <p className="text-slate-600">Loading profile...</p>
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
-      <h1 className="text-2xl font-bold text-slate-900">{t("profile.title")}</h1>
-      <p className="mt-2 text-sm text-slate-600">{t("profile.subtitle")}</p>
+      <h1 className="text-2xl font-bold text-slate-900">Profile Preferences</h1>
+      <p className="mt-2 text-sm text-slate-600">
+        Manage GPA, preferred city, preferred program, and preferred language.
+      </p>
 
       <form onSubmit={handleSubmit} className="mt-8 grid gap-5">
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
-            {t("profile.gpaLabel")}
+            GPA
           </label>
           <input
             type="number"
@@ -98,13 +97,13 @@ export default function Profile() {
             value={formData.gpa}
             onChange={handleChange}
             className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500"
-            placeholder={t("profile.gpaPlaceholder")}
+            placeholder="Enter your GPA"
           />
         </div>
 
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
-            {t("profile.cityLabel")}
+            Preferred City
           </label>
           <input
             type="text"
@@ -112,13 +111,13 @@ export default function Profile() {
             value={formData.preferred_city}
             onChange={handleChange}
             className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500"
-            placeholder={t("profile.cityPlaceholder")}
+            placeholder="e.g. Beijing"
           />
         </div>
 
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
-            {t("profile.programLabel")}
+            Preferred Program
           </label>
           <input
             type="text"
@@ -126,13 +125,13 @@ export default function Profile() {
             value={formData.preferred_program}
             onChange={handleChange}
             className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500"
-            placeholder={t("profile.programPlaceholder")}
+            placeholder="e.g. Data Science"
           />
         </div>
 
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">
-            {t("profile.languageLabel")}
+            Preferred Language
           </label>
           <input
             type="text"
@@ -140,14 +139,16 @@ export default function Profile() {
             value={formData.preferred_language}
             onChange={handleChange}
             className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500"
-            placeholder={t("profile.languagePlaceholder")}
+            placeholder="e.g. English"
           />
         </div>
 
         <div className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
           <div>
-            <p className="font-medium text-slate-900">{t("profile.remindersTitle")}</p>
-            <p className="text-sm text-slate-500">{t("profile.remindersDesc")}</p>
+            <p className="font-medium text-slate-900">Enable reminders</p>
+            <p className="text-sm text-slate-500">
+              Show reminder support for important deadlines.
+            </p>
           </div>
 
           <input
@@ -178,9 +179,9 @@ export default function Profile() {
         <button
           type="submit"
           disabled={saving}
-          className="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+          className="mt-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {saving ? t("profile.submitting") : t("profile.submit")}
+          {saving ? "Saving..." : "Save Preferences"}
         </button>
       </form>
     </div>

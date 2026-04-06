@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { fetchRecommendations } from "../api/recommendations";
 import { addApplication } from "../api/tracker";
-import { useLanguage } from "../contexts/LanguageContext";
 
-function UniversityCard({ university, t }) {
+function UniversityCard({ university }) {
+
   async function handleAdd() {
     try {
       await addApplication(university.id);
-      alert(t("recommendations.addedAlert"));
+      alert("University added to tracker");
     } catch (error) {
       alert(error.message);
     }
@@ -26,30 +26,28 @@ function UniversityCard({ university, t }) {
         </div>
 
         <div className="rounded-xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">
-          {t("recommendations.score")}: {university.score}
+          Score: {university.score}
         </div>
       </div>
 
       <div className="mt-4 grid gap-3 text-sm text-slate-700 md:grid-cols-2">
         <p>
-          <span className="font-medium">{t("recommendations.program")}:</span>{" "}
-          {university.program}
+          <span className="font-medium">Program:</span> {university.program}
         </p>
         <p>
-          <span className="font-medium">{t("recommendations.language")}:</span>{" "}
-          {university.language}
+          <span className="font-medium">Language:</span> {university.language}
         </p>
         <p>
-          <span className="font-medium">{t("recommendations.minGpa")}:</span>{" "}
-          {university.min_gpa}
+          <span className="font-medium">Min GPA:</span> {university.min_gpa}
         </p>
         <p>
-          <span className="font-medium">{t("recommendations.deadline")}:</span>{" "}
+          <span className="font-medium">Deadline:</span>{" "}
           {new Date(university.deadline).toLocaleDateString()}
         </p>
       </div>
 
       <div className="mt-4 flex gap-3">
+        {/* Apply Button */}
         {university.website_url && (
           <a
             href={university.website_url}
@@ -57,15 +55,16 @@ function UniversityCard({ university, t }) {
             rel="noopener noreferrer"
             className="rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
           >
-            {t("recommendations.applyNow")}
+            Apply Now
           </a>
         )}
 
+        {/* Tracker Button */}
         <button
           onClick={handleAdd}
           className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
         >
-          {t("recommendations.addToTracker")}
+          Add to Tracker
         </button>
       </div>
     </div>
@@ -73,8 +72,6 @@ function UniversityCard({ university, t }) {
 }
 
 export default function Recommendations() {
-  const { t } = useLanguage();
-
   const [exactMatches, setExactMatches] = useState([]);
   const [alternativeRecommendations, setAlternativeRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,16 +96,16 @@ export default function Recommendations() {
   if (loading) {
     return (
       <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
-        <p className="text-slate-600">{t("recommendations.loading")}</p>
+        <p className="text-slate-600">Loading recommendations...</p>
       </div>
     );
   }
 
   if (errorMessage) {
     return (
-      <div className="space-y-4">
-        <div className="rounded-2xl bg-red-50 p-8 ring-1 ring-red-200">
-          <p className="text-red-600">{errorMessage}</p>
+      <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+        <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+          {errorMessage}
         </div>
       </div>
     );
@@ -116,46 +113,58 @@ export default function Recommendations() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">
-          {t("recommendations.title")}
-        </h1>
+      <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+        <h1 className="text-2xl font-bold text-slate-900">Recommendations</h1>
         <p className="mt-2 text-sm text-slate-600">
-          {t("recommendations.subtitle")}
+          View exact matches and alternative recommendations based on your saved profile.
         </p>
       </div>
 
-      {/* Exact Matches */}
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-slate-800">
-          {t("recommendations.exactTitle")}
-        </h2>
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900">Exact Matches</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Universities that satisfy your selected criteria directly.
+          </p>
+        </div>
 
-        {exactMatches.length > 0 ? (
-          <div className="grid gap-4">
-            {exactMatches.map((uni) => (
-              <UniversityCard key={uni.id} university={uni} t={t} />
-            ))}
+        {exactMatches.length === 0 ? (
+          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <p className="text-sm text-slate-600">
+              No exact matches found for your current preferences.
+            </p>
           </div>
         ) : (
-          <p className="text-sm text-slate-500">{t("recommendations.noExact")}</p>
+          <div className="grid gap-6">
+            {exactMatches.map((university) => (
+              <UniversityCard key={university.id} university={university} />
+            ))}
+          </div>
         )}
       </section>
 
-      {/* Alternative Recommendations */}
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-slate-800">
-          {t("recommendations.altTitle")}
-        </h2>
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900">
+            Other Recommended Options
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Strong alternatives based on partial preference matching and GPA eligibility.
+          </p>
+        </div>
 
-        {alternativeRecommendations.length > 0 ? (
-          <div className="grid gap-4">
-            {alternativeRecommendations.map((uni) => (
-              <UniversityCard key={uni.id} university={uni} t={t} />
-            ))}
+        {alternativeRecommendations.length === 0 ? (
+          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <p className="text-sm text-slate-600">
+              No alternative recommendations available.
+            </p>
           </div>
         ) : (
-          <p className="text-sm text-slate-500">{t("recommendations.noAlt")}</p>
+          <div className="grid gap-6">
+            {alternativeRecommendations.map((university) => (
+              <UniversityCard key={university.id} university={university} />
+            ))}
+          </div>
         )}
       </section>
     </div>

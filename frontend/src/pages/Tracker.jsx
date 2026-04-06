@@ -1,35 +1,38 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+
 import {
   fetchApplications,
   updateApplicationStatus,
   deleteApplication,
 } from "../api/tracker";
 import { fetchProfile } from "../api/profile";
-import { useLanguage } from "../contexts/LanguageContext";
 
-function getDeadlineStatus(deadline, t) {
+
+function getDeadlineStatus(deadline) {
   if (!deadline) return null;
 
   const now = new Date();
   const ddl = new Date(deadline);
+
   const diffTime = ddl - now;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffDays < 0) {
-    return { text: t("tracker.deadlinePassed"), color: "text-red-500" };
+    return { text: "Deadline passed", color: "text-red-500" };
   }
+
   if (diffDays === 0) {
-    return { text: t("tracker.dueToday"), color: "text-orange-400" };
+    return { text: "Due today", color: "text-orange-400" };
   }
   if (diffDays <= 7) {
     return {
-      text: t("tracker.daysLeft", { count: diffDays }),
+      text: `${diffDays} ${diffDays === 1 ? "day" : "days"} left`,
       color: "text-yellow-400",
     };
   }
+
   return {
-    text: t("tracker.daysLeft", { count: diffDays }),
+    text: `${diffDays} ${diffDays === 1 ? "day" : "days"} left`,
     color: "text-green-400",
   };
 }
@@ -42,8 +45,14 @@ function getDeadlineCardClasses(deadline) {
   const diffTime = ddl - now;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  if (diffDays < 0) return "ring-red-300 bg-red-50";
-  if (diffDays <= 7) return "ring-yellow-300 bg-yellow-50";
+  if (diffDays < 0) {
+    return "ring-red-300 bg-red-50";
+  }
+
+  if (diffDays <= 7) {
+    return "ring-yellow-300 bg-yellow-50";
+  }
+
   return "ring-slate-200 bg-white";
 }
 
@@ -54,7 +63,6 @@ const STATUS_OPTIONS = [
   "Accepted",
   "Rejected",
 ];
-
 function getStatusBadgeClasses(status) {
   switch (status) {
     case "Not Started":
@@ -72,9 +80,8 @@ function getStatusBadgeClasses(status) {
   }
 }
 
-export default function Tracker() {
-  const { t } = useLanguage();
 
+export default function Tracker() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -105,67 +112,118 @@ export default function Tracker() {
       try {
         const data = await fetchProfile();
         setRemindersEnabled(data.reminders_enabled ?? true);
-      } catch {
-        /* ignore */
+      } catch (e) {
+        // fallback: keep remindersEnabled as true
       }
     }
     loadProfileReminders();
   }, []);
 
   async function handleStatusChange(applicationId, newStatus) {
+    setMessage("");
+    setErrorMessage("");
+
     try {
       await updateApplicationStatus(applicationId, newStatus);
+
       setApplications((prev) =>
         prev.map((app) =>
-          app.id === applicationId ? { ...app, status: newStatus } : app
+          app.application_id === applicationId
+            ? { ...app, status: newStatus }
+            : app
         )
       );
+
+      setMessage("Application status updated successfully.");
     } catch (error) {
       setErrorMessage(error.message);
     }
   }
 
   async function handleDelete(applicationId) {
-    if (!confirm(t("tracker.deleteConfirm"))) return;
+    setMessage("");
+    setErrorMessage("");
 
     try {
       await deleteApplication(applicationId);
-      setApplications((prev) => prev.filter((app) => app.id !== applicationId));
+
+      setApplications((prev) =>
+        prev.filter((app) => app.application_id !== applicationId)
+      );
+
+      setMessage("Application deleted successfully.");
     } catch (error) {
       setErrorMessage(error.message);
     }
   }
 
+  const activeApplications = applications.filter(
+    (app) => app.status !== "Accepted" && app.status !== "Rejected"
+  );
+
+  const urgentApplications = activeApplications.filter((app) => {
+    if (!app.deadline) return false;
+
+    const now = new Date();
+    const ddl = new Date(app.deadline);
+    const diffTime = ddl - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays >= 0 && diffDays <= 7;
+  });
+
+  const passedApplications = activeApplications.filter((app) => {
+    if (!app.deadline) return false;
+
+    const now = new Date();
+    const ddl = new Date(app.deadline);
+    const diffTime = ddl - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays < 0;
+  });
+
   if (loading) {
     return (
       <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
-        <p className="text-slate-600">{t("tracker.loading")}</p>
+        <p className="text-slate-600">Loading applications...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{t("tracker.title")}</h1>
-          <p className="mt-1 text-sm text-slate-600">{t("tracker.subtitle")}</p>
-        </div>
 
-        <span
-          className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-            remindersEnabled
-              ? "bg-green-50 text-green-700"
-              : "bg-slate-100 text-slate-500"
-          }`}
-        >
-          {remindersEnabled ? t("tracker.remindersOn") : t("tracker.remindersOff")}
-        </span>
+      <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+        <h1 className="text-2xl font-bold text-slate-900">Application Tracker</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Track saved universities and update your application progress.
+        </p>
       </div>
 
-      {errorMessage ? (
-        <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-          {errorMessage}
+      {remindersEnabled ? (
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <h2 className="text-lg font-semibold text-slate-900">Reminder Summary</h2>
+
+          <div className="mt-3 space-y-2 text-sm">
+            {urgentApplications.length > 0 ? (
+              <p className="text-yellow-600">
+                {urgentApplications.length} active application{urgentApplications.length === 1 ? "" : "s"} ha{urgentApplications.length === 1 ? "s" : "ve"} a deadline within 7 days.
+              </p>
+            ) : null}
+
+            {passedApplications.length > 0 ? (
+              <p className="text-red-600">
+                {passedApplications.length} active application{passedApplications.length === 1 ? "" : "s"} ha{passedApplications.length === 1 ? "s" : "ve"} a passed deadline.
+              </p>
+            ) : null}
+
+            {urgentApplications.length === 0 && passedApplications.length === 0 ? (
+              <p className="text-green-600">
+                No urgent reminders right now.
+              </p>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
@@ -175,80 +233,83 @@ export default function Tracker() {
         </div>
       ) : null}
 
+      {errorMessage ? (
+        <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+          {errorMessage}
+        </div>
+      ) : null}
+
       {applications.length === 0 ? (
-        <div className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200">
-          <p className="text-slate-600">{t("tracker.empty")}</p>
-          <Link
-            to="/recommendations"
-            className="mt-4 inline-block rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            {t("tracker.browseBtn")}
-          </Link>
+        <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
+          <p className="text-sm text-slate-600">
+            No applications saved yet.
+          </p>
         </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-6">
           {applications.map((app) => {
-            const deadlineInfo = getDeadlineStatus(app.deadline, t);
-            const cardClasses = getDeadlineCardClasses(app.deadline);
+            const deadlineStatus = getDeadlineStatus(app.deadline);
 
             return (
               <div
-                key={app.id}
-                className={`rounded-2xl p-6 shadow-sm ring-1 ${cardClasses}`}
+                key={app.application_id}
+                className={`rounded-2xl p-6 shadow-sm transition hover:shadow-md ring-1 ${getDeadlineCardClasses(app.deadline)}`}
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900">
-                      {app.university_name || app.name}
-                    </h3>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      {app.name}
+                    </h2>
                     <p className="mt-1 text-sm text-slate-600">
                       {app.city}, {app.country}
                     </p>
+
+                    <div className="mt-4 grid gap-2 text-sm text-slate-700">
+                      <p>
+                        <span className="font-medium">Program:</span> {app.program}
+                      </p>
+                      <p>
+                        <span className="font-medium">Deadline:</span>{" "}
+                        {new Date(app.deadline).toLocaleDateString()}
+                      </p>
+                      {remindersEnabled && deadlineStatus && (
+                        <p className={`text-sm mt-1 font-semibold ${deadlineStatus.color}`}>
+                          {deadlineStatus.text}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm text-slate-700">Current Status:</span>
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClasses(app.status)}`}
+                        >
+                          {app.status}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  <span
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${getStatusBadgeClasses(
-                      app.status
-                    )}`}
-                  >
-                    {t(`tracker.statuses.${app.status}`) || app.status}
-                  </span>
-                </div>
+                  <div className="flex flex-col gap-3 md:w-56">
+                    <select
+                      value={app.status}
+                      onChange={(e) =>
+                        handleStatusChange(app.application_id, e.target.value)
+                      }
+                      className="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500"
+                    >
+                      {STATUS_OPTIONS.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
 
-                <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
-                  {deadlineInfo && (
-                    <p className={`font-medium ${deadlineInfo.color}`}>
-                      {deadlineInfo.text}
-                    </p>
-                  )}
-
-                  {app.deadline && (
-                    <p className="text-slate-500">
-                      {t("tracker.deadlineLabel")}:{" "}
-                      {new Date(app.deadline).toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
-
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <select
-                    value={app.status}
-                    onChange={(e) => handleStatusChange(app.id, e.target.value)}
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-blue-500"
-                  >
-                    {STATUS_OPTIONS.map((status) => (
-                      <option key={status} value={status}>
-                        {t(`tracker.statuses.${status}`) || status}
-                      </option>
-                    ))}
-                  </select>
-
-                  <button
-                    onClick={() => handleDelete(app.id)}
-                    className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100"
-                  >
-                    {t("tracker.deleteBtn")}
-                  </button>
+                    <button
+                      onClick={() => handleDelete(app.application_id)}
+                      className="rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
+                    >
+                      Delete Application
+                    </button>
+                  </div>
                 </div>
               </div>
             );
