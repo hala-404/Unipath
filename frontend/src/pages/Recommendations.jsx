@@ -1,14 +1,31 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { fetchRecommendations } from "../api/recommendations";
 import { addApplication } from "../api/tracker";
 import { addUniversityToCompare } from "../api/compareStorage";
 import { useLanguage } from "../contexts/LanguageContext";
 
 function UniversityCard({ university, t }) {
+  const navigate = useNavigate();
+
   async function handleAdd() {
     try {
       await addApplication(university.id);
       alert(t("recommendations.addedAlert"));
+    } catch (error) {
+      alert(error.message);
+    }
+  }
+
+  function handleCompare() {
+    try {
+      const updated = addUniversityToCompare(university);
+
+      if (updated.length === 2) {
+        navigate("/compare");
+      } else {
+        alert("First university added. Select one more to compare.");
+      }
     } catch (error) {
       alert(error.message);
     }
@@ -93,15 +110,8 @@ function UniversityCard({ university, t }) {
         )}
 
         <button
-          onClick={() => {
-            try {
-              addUniversityToCompare(university);
-              alert("Added to compare");
-            } catch (err) {
-              alert(err.message);
-            }
-          }}
-          className="rounded-lg bg-slate-900 px-3 py-1 text-white"
+          onClick={handleCompare}
+          className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900"
         >
           Compare
         </button>

@@ -44,30 +44,6 @@ function cellClass(field, university, universities) {
       : "";
   }
 
-  if (field === "world_ranking") {
-    const numericValues = universities
-      .map((u) => Number(u.world_ranking))
-      .filter((v) => !Number.isNaN(v) && v > 0);
-
-    const best = Math.min(...numericValues);
-
-    return Number(university.world_ranking) === best
-      ? "bg-emerald-50 text-emerald-700"
-      : "";
-  }
-
-  if (field === "tuition_fee") {
-    const numericValues = universities
-      .map((u) => Number(u.tuition_fee ?? u.tuition))
-      .filter((v) => !Number.isNaN(v) && v >= 0);
-
-    const best = Math.min(...numericValues);
-
-    return Number(university.tuition_fee ?? university.tuition) === best
-      ? "bg-emerald-50 text-emerald-700"
-      : "";
-  }
-
   return "";
 }
 
@@ -103,25 +79,13 @@ export default function Compare() {
         render: (u) => u.min_gpa ?? "N/A",
       },
       {
-        label: "Tuition",
-        field: "tuition_fee",
-        render: (u) => {
-          const value = u.tuition_fee ?? u.tuition;
-          return value ? `$${Number(value).toLocaleString()}` : "N/A";
-        },
-      },
-      {
         label: "Deadline",
         render: (u) => formatDate(u.deadline),
       },
       {
         label: "Fit Score",
         field: "score",
-        render: (u) => (
-          <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700">
-            {u.score ?? 0}% fit
-          </span>
-        ),
+        render: (u) => `${u.score ?? 0}`,
       },
       {
         label: "Risk Level",
@@ -134,17 +98,6 @@ export default function Compare() {
             {u.risk_label || "N/A"}
           </span>
         ),
-      },
-      {
-        label: "World Ranking",
-        field: "world_ranking",
-        render: (u) => (u.world_ranking ? `#${u.world_ranking}` : "N/A"),
-      },
-      {
-        label: "Acceptance Rate",
-        field: "acceptance_rate",
-        render: (u) =>
-          u.acceptance_rate ? `${u.acceptance_rate}%` : "N/A",
       },
     ],
     []
