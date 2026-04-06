@@ -1,6 +1,18 @@
 const pool = require("../db/pool");
 const { ensureLocalUser } = require("../utils/ensureLocalUser");
 
+const defaultChecklist = [
+  { label: "Transcript", completed: false, priority: "high" },
+  { label: "CV", completed: false, priority: "medium" },
+  { label: "Personal Statement", completed: false, priority: "high" },
+  { label: "Recommendation Letters", completed: false, priority: "medium" },
+  { label: "Language Proficiency", completed: false, priority: "high" },
+  { label: "Non-Criminal Record", completed: false, priority: "medium" },
+  { label: "Medical Check", completed: false, priority: "medium" },
+  { label: "Additional Certificates", completed: false, priority: "medium" },
+  { label: "Passport", completed: false, priority: "high" },
+];
+
 async function createApplication(req, res) {
   try {
     const { university_id, status } = req.body;
@@ -12,10 +24,15 @@ async function createApplication(req, res) {
     }
 
     const result = await pool.query(
-      `INSERT INTO applications (user_id, university_id, status)
-       VALUES ($1, $2, $3)
+      `INSERT INTO applications (user_id, university_id, status, checklist)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [user_id, university_id, status || "Not Started"]
+      [
+        user_id,
+        university_id,
+        status || "Not Started",
+        JSON.stringify(defaultChecklist),
+      ]
     );
 
     return res.status(201).json(result.rows[0]);
@@ -34,6 +51,7 @@ async function listApplications(req, res) {
          a.id AS application_id,
          a.status,
          a.user_id,
+         a.checklist,
          u.id AS university_id,
          u.name,
          u.city,
@@ -82,6 +100,35 @@ async function updateApplicationStatus(req, res) {
   }
 }
 
+async function updateApplicationChecklist(req, res) {
+  try {
+    const { id } = req.params;
+    const { checklist } = req.body;
+    const localUser = await ensureLocalUser(pool, req);
+    const user_id = localUser.id;
+
+    if (!Array.isArray(checklist)) {
+      return res.status(400).json({ error: "checklist must be an array" });
+    }
+
+    const result = await pool.query(
+      `UPDATE applications
+       SET checklist = $1
+       WHERE id = $2 AND user_id = $3
+       RETURNING *`,
+      [JSON.stringify(checklist), id, user_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Application not found (or not yours)" });
+    }
+
+    return res.json(result.rows[0]);
+  } catch (err) {
+    return res.status(err.status || 500).json({ error: err.message });
+  }
+}
+
 async function deleteApplication(req, res) {
   try {
     const { id } = req.params;
@@ -109,5 +156,6 @@ module.exports = {
   createApplication,
   listApplications,
   updateApplicationStatus,
+  updateApplicationChecklist,
   deleteApplication,
 };

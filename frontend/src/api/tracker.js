@@ -39,6 +39,26 @@ export async function updateApplicationStatus(applicationId, status, token) {
   return data;
 }
 
+export async function updateApplicationChecklist(applicationId, checklist, token) {
+  const response = await fetch(`${API_URL}/applications/${applicationId}/checklist`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    credentials: "include",
+    body: JSON.stringify({ checklist }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to update checklist");
+  }
+
+  return data;
+}
+
 export async function deleteApplication(applicationId, token) {
   const response = await fetch(`${API_URL}/applications/${applicationId}`, {
     method: "DELETE",
@@ -57,6 +77,7 @@ export async function deleteApplication(applicationId, token) {
 
   return data;
 }
+
 export async function addApplication(universityId, token) {
   const response = await fetch(`${API_URL}/applications`, {
     method: "POST",
