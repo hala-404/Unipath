@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { clerkMiddleware } = require("@clerk/express");
+const { clerkMiddleware, requireAuth, getAuth } = require("@clerk/express");
 require("dotenv").config();
 const { runReminderCheck } = require("./jobs/reminder.job");
 const { validateEnv } = require("./config/env");

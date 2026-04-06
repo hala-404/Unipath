@@ -1,12 +1,9 @@
 const pool = require("../db/pool");
-const { getAuth } = require("@clerk/express");
 const { ensureLocalUser } = require("../utils/ensureLocalUser");
 
 async function getRecommendations(req, res) {
   try {
-    const { userId: clerkUserId, sessionClaims } = getAuth(req);
-    const email = sessionClaims?.email || sessionClaims?.email_address || null;
-    const localUser = await ensureLocalUser(pool, clerkUserId, email);
+    const localUser = await ensureLocalUser(pool, req);
     const user_id = localUser.id;
 
     let { gpa, city, program, language } = req.query;
@@ -113,7 +110,7 @@ async function getRecommendations(req, res) {
       alternativeRecommendations,
     });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(err.status || 500).json({ error: err.message });
   }
 }
 

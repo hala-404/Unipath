@@ -1,12 +1,9 @@
 const pool = require("../db/pool");
-const { getAuth } = require("@clerk/express");
 const { ensureLocalUser } = require("../utils/ensureLocalUser");
 
 async function getProfile(req, res) {
   try {
-    const { userId: clerkUserId, sessionClaims } = getAuth(req);
-    const email = sessionClaims?.email || sessionClaims?.email_address || null;
-    const localUser = await ensureLocalUser(pool, clerkUserId, email);
+    const localUser = await ensureLocalUser(pool, req);
     const user_id = localUser.id;
 
     const result = await pool.query(
@@ -22,15 +19,13 @@ async function getProfile(req, res) {
 
     return res.json(result.rows[0]);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(err.status || 500).json({ error: err.message });
   }
 }
 
 async function updateProfile(req, res) {
   try {
-    const { userId: clerkUserId, sessionClaims } = getAuth(req);
-    const email = sessionClaims?.email || sessionClaims?.email_address || null;
-    const localUser = await ensureLocalUser(pool, clerkUserId, email);
+    const localUser = await ensureLocalUser(pool, req);
     const user_id = localUser.id;
     const { gpa, preferred_city, preferred_program, preferred_language, reminders_enabled } = req.body;
 
@@ -77,7 +72,7 @@ async function updateProfile(req, res) {
       profile: result.rows[0],
     });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(err.status || 500).json({ error: err.message });
   }
 }
 

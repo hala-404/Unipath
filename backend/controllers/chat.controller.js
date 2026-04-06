@@ -246,9 +246,7 @@ const chatWithAdvisor = async (req, res) => {
       return res.status(400).json({ message: "Message is required." });
     }
 
-    const { userId: clerkUserId, sessionClaims } = getAuth(req);
-    const email = sessionClaims?.email || sessionClaims?.email_address || null;
-    const localUser = await ensureLocalUser(pool, clerkUserId, email);
+    const localUser = await ensureLocalUser(pool, req);
     const userId = localUser.id;
 
     // 1. Load saved user profile
@@ -538,8 +536,8 @@ NOW RESPOND TO THE USER'S MESSAGE:`;
     return res.status(200).json({ reply });
   } catch (error) {
     console.error("Chat error:", error.response?.data || error.message);
-    return res.status(500).json({
-      message: "Failed to get chatbot response.",
+    return res.status(error.status || 500).json({
+      message: error.message || "Failed to get chatbot response.",
     });
   }
 };

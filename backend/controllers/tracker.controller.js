@@ -1,13 +1,10 @@
 const pool = require("../db/pool");
-const { getAuth } = require("@clerk/express");
 const { ensureLocalUser } = require("../utils/ensureLocalUser");
 
 async function createApplication(req, res) {
   try {
     const { university_id, status } = req.body;
-    const { userId: clerkUserId, sessionClaims } = getAuth(req);
-    const email = sessionClaims?.email || sessionClaims?.email_address || null;
-    const localUser = await ensureLocalUser(pool, clerkUserId, email);
+    const localUser = await ensureLocalUser(pool, req);
     const user_id = localUser.id;
 
     if (!university_id) {
@@ -23,15 +20,13 @@ async function createApplication(req, res) {
 
     return res.status(201).json(result.rows[0]);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(err.status || 500).json({ error: err.message });
   }
 }
 
 async function listApplications(req, res) {
   try {
-    const { userId: clerkUserId, sessionClaims } = getAuth(req);
-    const email = sessionClaims?.email || sessionClaims?.email_address || null;
-    const localUser = await ensureLocalUser(pool, clerkUserId, email);
+    const localUser = await ensureLocalUser(pool, req);
     const user_id = localUser.id;
 
     const result = await pool.query(
@@ -54,7 +49,7 @@ async function listApplications(req, res) {
 
     return res.json(result.rows);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(err.status || 500).json({ error: err.message });
   }
 }
 
@@ -62,9 +57,7 @@ async function updateApplicationStatus(req, res) {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    const { userId: clerkUserId, sessionClaims } = getAuth(req);
-    const email = sessionClaims?.email || sessionClaims?.email_address || null;
-    const localUser = await ensureLocalUser(pool, clerkUserId, email);
+    const localUser = await ensureLocalUser(pool, req);
     const user_id = localUser.id;
 
     if (!status) {
@@ -85,16 +78,14 @@ async function updateApplicationStatus(req, res) {
 
     return res.json(result.rows[0]);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(err.status || 500).json({ error: err.message });
   }
 }
 
 async function deleteApplication(req, res) {
   try {
     const { id } = req.params;
-    const { userId: clerkUserId, sessionClaims } = getAuth(req);
-    const email = sessionClaims?.email || sessionClaims?.email_address || null;
-    const localUser = await ensureLocalUser(pool, clerkUserId, email);
+    const localUser = await ensureLocalUser(pool, req);
     const user_id = localUser.id;
 
     const result = await pool.query(
@@ -110,7 +101,7 @@ async function deleteApplication(req, res) {
 
     return res.json({ deleted: true, application: result.rows[0] });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(err.status || 500).json({ error: err.message });
   }
 }
 
