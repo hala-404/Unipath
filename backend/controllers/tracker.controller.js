@@ -1,57 +1,16 @@
 const pool = require("../db/pool");
 
-function buildDefaultChecklist() {
-  return [
-    {
-      id: "cv",
-      label: "CV",
-      done: false,
-      priority: "high",
-    },
-    {
-      id: "personal_statement",
-      label: "Personal Statement",
-      done: false,
-      priority: "high",
-    },
-    {
-      id: "passport",
-      label: "Passport",
-      done: false,
-      priority: "high",
-    },
-    {
-      id: "language_proficiency",
-      label: "Language Proficiency Document",
-      done: false,
-      priority: "high",
-    },
-    {
-      id: "transcript",
-      label: "Transcript",
-      done: false,
-      priority: "high",
-    },
-    {
-      id: "additional_certificates",
-      label: "Additional Certificates",
-      done: false,
-      priority: "medium",
-    },
-    {
-      id: "non_criminal_record",
-      label: "Non-Criminal Record",
-      done: false,
-      priority: "medium",
-    },
-    {
-      id: "medical_check",
-      label: "Medical Check",
-      done: false,
-      priority: "medium",
-    },
-  ];
-}
+const defaultChecklist = [
+  { label: "Transcript", completed: false, priority: "high" },
+  { label: "CV", completed: false, priority: "medium" },
+  { label: "Personal Statement", completed: false, priority: "high" },
+  { label: "Recommendation Letters", completed: false, priority: "medium" },
+  { label: "Language Proficiency", completed: false, priority: "high" },
+  { label: "Non-Criminal Record", completed: false, priority: "medium" },
+  { label: "Medical Check", completed: false, priority: "medium" },
+  { label: "Additional Certificates", completed: false, priority: "medium" },
+  { label: "Passport", completed: false, priority: "high" },
+];
 
 async function createApplication(req, res) {
   try {
@@ -79,7 +38,7 @@ async function createApplication(req, res) {
         user_id,
         university_id,
         status || "Not Started",
-        JSON.stringify(buildDefaultChecklist()),
+        JSON.stringify(defaultChecklist),
       ]
     );
 
