@@ -1,18 +1,12 @@
 import { API_BASE_URL } from "./config";
 
-function getAuthHeaders() {
-  const token = localStorage.getItem("token");
-
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-}
-
 export async function fetchRecommendations() {
   const response = await fetch(`${API_BASE_URL}/universities/recommendations`, {
     method: "GET",
-    headers: getAuthHeaders(),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
   });
 
   const data = await response.json();

@@ -1,11 +1,11 @@
 const express = require("express");
-const authRequired = require("../middleware/auth.middleware");
+const { requireAuth } = require("@clerk/express");
 const { listUniversities } = require("../controllers/university.controller");
 const { getRecommendations } = require("../controllers/recommendation.controller");
 
 const router = express.Router();
 
 router.get("/", listUniversities);
-router.get("/recommendations", authRequired, getRecommendations);
+router.get("/recommendations", requireAuth(), getRecommendations);
 
 module.exports = router;

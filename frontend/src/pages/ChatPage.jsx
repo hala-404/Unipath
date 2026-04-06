@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_BASE_URL } from "../api/config";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState([
@@ -11,9 +12,6 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const token = localStorage.getItem("token");
-  console.log("CHAT TOKEN:", token);
-
   const handleSend = async () => {
     if (!input.trim() || loading) return;
 
@@ -25,12 +23,12 @@ export default function ChatPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5050/api/chat", {
+      const res = await fetch(`${API_BASE_URL}/api/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({
             message: currentInput,
              history: messages.slice(-6),

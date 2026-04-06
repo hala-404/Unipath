@@ -1,8 +1,13 @@
 const pool = require("../db/pool");
+const { getAuth } = require("@clerk/express");
+const { ensureLocalUser } = require("../utils/ensureLocalUser");
 
 async function getProfile(req, res) {
   try {
-    const user_id = req.user.user_id;
+    const { userId: clerkUserId, sessionClaims } = getAuth(req);
+    const email = sessionClaims?.email || sessionClaims?.email_address || null;
+    const localUser = await ensureLocalUser(pool, clerkUserId, email);
+    const user_id = localUser.id;
 
     const result = await pool.query(
       `SELECT id, email, gpa, preferred_city, preferred_program, preferred_language, reminders_enabled
@@ -23,7 +28,10 @@ async function getProfile(req, res) {
 
 async function updateProfile(req, res) {
   try {
-    const user_id = req.user.user_id;
+    const { userId: clerkUserId, sessionClaims } = getAuth(req);
+    const email = sessionClaims?.email || sessionClaims?.email_address || null;
+    const localUser = await ensureLocalUser(pool, clerkUserId, email);
+    const user_id = localUser.id;
     const { gpa, preferred_city, preferred_program, preferred_language, reminders_enabled } = req.body;
 
 

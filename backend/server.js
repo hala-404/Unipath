@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const { clerkMiddleware } = require("@clerk/express");
 require("dotenv").config();
 const { runReminderCheck } = require("./jobs/reminder.job");
 const { validateEnv } = require("./config/env");
@@ -8,7 +9,6 @@ validateEnv();
 const pool = require("./db/pool");
 const chatRoutes = require("./routes/chat.routes");
 
-const authRoutes = require("./routes/auth.routes");
 const profileRoutes = require("./routes/profile.routes");
 const trackerRoutes = require("./routes/tracker.routes");
 const universityRoutes = require("./routes/university.routes");
@@ -17,9 +17,26 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(clerkMiddleware());
+
+async function ensureClerkUserColumn() {
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS clerk_user_id TEXT
+  `);
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS users_clerk_user_id_unique
+    ON users (clerk_user_id)
+    WHERE clerk_user_id IS NOT NULL
+  `);
+}
+
+ensureClerkUserColumn().catch((err) => {
+  console.error("Failed to ensure users.clerk_user_id schema:", err.message);
+});
 
 // Routes
-app.use("/auth", authRoutes);
 app.use("/profile", profileRoutes);
 app.use("/applications", trackerRoutes);
 app.use("/universities", universityRoutes);

@@ -12,10 +12,11 @@ function validateEnv() {
   requireEnv("DB_PORT");
   requireEnv("DB_NAME");
   requireEnv("DB_USER");
-  requireEnv("JWT_SECRET");
+  requireEnv("CLERK_SECRET_KEY");
 
-  if (!process.env.JWT_EXPIRES_IN) process.env.JWT_EXPIRES_IN = "7d";
-  if (!process.env.BCRYPT_SALT_ROUNDS) process.env.BCRYPT_SALT_ROUNDS = "10";
+  if (!process.env.OPENROUTER_API_KEY) {
+    console.warn("OPENROUTER_API_KEY is not set; chat endpoint will fail until configured.");
+  }
 }
 
 module.exports = { validateEnv };

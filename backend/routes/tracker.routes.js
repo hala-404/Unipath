@@ -1,5 +1,5 @@
 const express = require("express");
-const authRequired = require("../middleware/auth.middleware");
+const { requireAuth } = require("@clerk/express");
 const {
   createApplication,
   listApplications,
@@ -9,9 +9,9 @@ const {
 
 const router = express.Router();
 
-router.post("/", authRequired, createApplication);
-router.get("/", authRequired, listApplications);
-router.put("/:id", authRequired, updateApplicationStatus);
-router.delete("/:id", authRequired, deleteApplication);
+router.post("/", requireAuth(), createApplication);
+router.get("/", requireAuth(), listApplications);
+router.put("/:id", requireAuth(), updateApplicationStatus);
+router.delete("/:id", requireAuth(), deleteApplication);
 
 module.exports = router;

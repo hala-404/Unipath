@@ -1,9 +1,14 @@
 const pool = require("../db/pool");
+const { getAuth } = require("@clerk/express");
+const { ensureLocalUser } = require("../utils/ensureLocalUser");
 
 async function createApplication(req, res) {
   try {
     const { university_id, status } = req.body;
-    const user_id = req.user.user_id;
+    const { userId: clerkUserId, sessionClaims } = getAuth(req);
+    const email = sessionClaims?.email || sessionClaims?.email_address || null;
+    const localUser = await ensureLocalUser(pool, clerkUserId, email);
+    const user_id = localUser.id;
 
     if (!university_id) {
       return res.status(400).json({ error: "university_id is required" });
@@ -24,7 +29,10 @@ async function createApplication(req, res) {
 
 async function listApplications(req, res) {
   try {
-    const user_id = req.user.user_id;
+    const { userId: clerkUserId, sessionClaims } = getAuth(req);
+    const email = sessionClaims?.email || sessionClaims?.email_address || null;
+    const localUser = await ensureLocalUser(pool, clerkUserId, email);
+    const user_id = localUser.id;
 
     const result = await pool.query(
       `SELECT 
@@ -54,7 +62,10 @@ async function updateApplicationStatus(req, res) {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    const user_id = req.user.user_id;
+    const { userId: clerkUserId, sessionClaims } = getAuth(req);
+    const email = sessionClaims?.email || sessionClaims?.email_address || null;
+    const localUser = await ensureLocalUser(pool, clerkUserId, email);
+    const user_id = localUser.id;
 
     if (!status) {
       return res.status(400).json({ error: "status is required" });
@@ -81,7 +92,10 @@ async function updateApplicationStatus(req, res) {
 async function deleteApplication(req, res) {
   try {
     const { id } = req.params;
-    const user_id = req.user.user_id;
+    const { userId: clerkUserId, sessionClaims } = getAuth(req);
+    const email = sessionClaims?.email || sessionClaims?.email_address || null;
+    const localUser = await ensureLocalUser(pool, clerkUserId, email);
+    const user_id = localUser.id;
 
     const result = await pool.query(
       `DELETE FROM applications

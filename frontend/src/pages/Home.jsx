@@ -1,8 +1,6 @@
 import { Link } from "react-router-dom";
 
 export default function Home() {
-  const token = localStorage.getItem("token");
-
   return (
     <div className="space-y-16">
       <section className="flex min-h-[70vh] items-center">
@@ -20,7 +18,7 @@ export default function Home() {
 
           <div className="mt-6 flex gap-3">
             <Link
-              to={token ? "/recommendations" : "/register"}
+              to="/recommendations"
               className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
             >
               Get Started

@@ -1,18 +1,12 @@
 import { API_BASE_URL } from "./config";
 
-function getAuthHeaders() {
-  const token = localStorage.getItem("token");
-
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-}
-
 export async function fetchApplications() {
   const response = await fetch(`${API_BASE_URL}/applications`, {
     method: "GET",
-    headers: getAuthHeaders(),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
   });
 
   const data = await response.json();
@@ -27,7 +21,10 @@ export async function fetchApplications() {
 export async function updateApplicationStatus(applicationId, status) {
   const response = await fetch(`${API_BASE_URL}/applications/${applicationId}`, {
     method: "PUT",
-    headers: getAuthHeaders(),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
     body: JSON.stringify({ status }),
   });
 
@@ -43,7 +40,10 @@ export async function updateApplicationStatus(applicationId, status) {
 export async function deleteApplication(applicationId) {
   const response = await fetch(`${API_BASE_URL}/applications/${applicationId}`, {
     method: "DELETE",
-    headers: getAuthHeaders(),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
   });
 
   const data = await response.json();
@@ -55,14 +55,12 @@ export async function deleteApplication(applicationId) {
   return data;
 }
 export async function addApplication(universityId) {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch("http://localhost:5050/applications", {
+  const response = await fetch(`${API_BASE_URL}/applications`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     },
+    credentials: "include",
     body: JSON.stringify({
       university_id: universityId,
       status: "Not Started",

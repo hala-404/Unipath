@@ -1,17 +1,7 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/react";
 
 export default function Navbar() {
-  const navigate = useNavigate();
-
-  const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user") || "null");
-
-  function handleLogout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/login");
-  }
-
   return (
     <nav className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -24,7 +14,7 @@ export default function Navbar() {
             Home
           </Link>
 
-          {token ? (
+          <Show when="signed-in">
             <>
               <Link className="transition hover:text-blue-600" to="/recommendations">
                 Recommendations
@@ -42,34 +32,24 @@ export default function Navbar() {
               <Link className="transition hover:text-blue-600" to="/chat">
                 Chat
               </Link>
-
-              {user?.email ? (
-                <span className="hidden text-slate-500 md:inline">
-                  {user.email}
-                </span>
-              ) : null}
-
-              <button
-                onClick={handleLogout}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-white transition hover:bg-slate-800"
-              >
-                Logout
-              </button>
+              <UserButton />
             </>
-          ) : (
+          </Show>
+
+          <Show when="signed-out">
             <>
-              <Link className="transition hover:text-blue-600" to="/register">
-                Register
-              </Link>
-
-              <Link
-                className="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
-                to="/login"
-              >
-                Login
-              </Link>
+              <SignInButton>
+                <button className="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700">
+                  Login
+                </button>
+              </SignInButton>
+              <SignUpButton>
+                <button className="rounded-lg border border-slate-300 px-4 py-2 transition hover:border-blue-600 hover:text-blue-600">
+                  Register
+                </button>
+              </SignUpButton>
             </>
-          )}
+          </Show>
         </div>
       </div>
     </nav>

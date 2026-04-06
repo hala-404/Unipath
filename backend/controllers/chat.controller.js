@@ -1,5 +1,7 @@
 const axios = require("axios");
 const pool = require("../db/pool");
+const { getAuth } = require("@clerk/express");
+const { ensureLocalUser } = require("../utils/ensureLocalUser");
 
 async function callOpenRouter(messages) {
   const response = await axios.post(
@@ -244,7 +246,10 @@ const chatWithAdvisor = async (req, res) => {
       return res.status(400).json({ message: "Message is required." });
     }
 
-    const userId = req.user.user_id;
+    const { userId: clerkUserId, sessionClaims } = getAuth(req);
+    const email = sessionClaims?.email || sessionClaims?.email_address || null;
+    const localUser = await ensureLocalUser(pool, clerkUserId, email);
+    const userId = localUser.id;
 
     // 1. Load saved user profile
     const profileResult = await pool.query(
