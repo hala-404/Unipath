@@ -6,7 +6,6 @@ const en = {
   nav: {
     brand: "UniPath",
     home: "Home",
-    compare: "Compare",
     recommendations: "Recommendations",
     tracker: "Tracker",
     profile: "Profile",

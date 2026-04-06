@@ -33,10 +33,6 @@ export default function Navbar() {
                 {t("nav.recommendations")}
               </Link>
 
-              <Link className="transition hover:text-blue-600" to="/compare">
-                {t("nav.compare")}
-              </Link>
-
               <Link className="transition hover:text-blue-600" to="/tracker">
                 {t("nav.tracker")}
               </Link>

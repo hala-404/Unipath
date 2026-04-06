@@ -6,7 +6,6 @@ const ar = {
   nav: {
     brand: "يوني باث",
     home: "الرئيسية",
-    compare: "المقارنة",
     recommendations: "التوصيات",
     tracker: "المتابعة",
     profile: "الملف الشخصي",

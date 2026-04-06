@@ -7,8 +7,6 @@ async function listUniversities(req, res) {
     const conditions = [];
     const values = [];
 
-    conditions.push(`deadline >= CURRENT_DATE`);
-
     if (gpa) {
       values.push(Number(gpa));
       conditions.push(`min_gpa <= $${values.length}`);
