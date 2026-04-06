@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/react";
 import { fetchRecommendations } from "../api/recommendations";
 import { addApplication } from "../api/tracker";
 
-function UniversityCard({ university }) {
+function UniversityCard({ university, getToken, isLoaded, isSignedIn }) {
 
   async function handleAdd() {
     try {
-      await addApplication(university.id);
+      if (!isLoaded || !isSignedIn) {
+        throw new Error("You must be signed in to add an application.");
+      }
+
+      const token = await getToken();
+      await addApplication(university.id, token);
       alert("University added to tracker");
     } catch (error) {
       alert(error.message);
@@ -72,6 +78,7 @@ function UniversityCard({ university }) {
 }
 
 export default function Recommendations() {
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const [exactMatches, setExactMatches] = useState([]);
   const [alternativeRecommendations, setAlternativeRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -79,8 +86,14 @@ export default function Recommendations() {
 
   useEffect(() => {
     async function loadRecommendations() {
+      if (!isLoaded || !isSignedIn) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const data = await fetchRecommendations();
+        const token = await getToken();
+        const data = await fetchRecommendations(token);
         setExactMatches(data.exactMatches || []);
         setAlternativeRecommendations(data.alternativeRecommendations || []);
       } catch (error) {
@@ -91,7 +104,7 @@ export default function Recommendations() {
     }
 
     loadRecommendations();
-  }, []);
+  }, [getToken, isLoaded, isSignedIn]);
 
   if (loading) {
     return (
@@ -137,7 +150,13 @@ export default function Recommendations() {
         ) : (
           <div className="grid gap-6">
             {exactMatches.map((university) => (
-              <UniversityCard key={university.id} university={university} />
+              <UniversityCard
+                key={university.id}
+                university={university}
+                getToken={getToken}
+                isLoaded={isLoaded}
+                isSignedIn={isSignedIn}
+              />
             ))}
           </div>
         )}
@@ -162,7 +181,13 @@ export default function Recommendations() {
         ) : (
           <div className="grid gap-6">
             {alternativeRecommendations.map((university) => (
-              <UniversityCard key={university.id} university={university} />
+              <UniversityCard
+                key={university.id}
+                university={university}
+                getToken={getToken}
+                isLoaded={isLoaded}
+                isSignedIn={isSignedIn}
+              />
             ))}
           </div>
         )}

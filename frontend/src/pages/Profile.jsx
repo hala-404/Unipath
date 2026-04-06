@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/react";
 import { fetchProfile, updateProfile } from "../api/profile";
 
 export default function Profile() {
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const [formData, setFormData] = useState({
     gpa: "",
     preferred_city: "",
@@ -17,8 +19,14 @@ export default function Profile() {
 
   useEffect(() => {
     async function loadProfile() {
+      if (!isLoaded || !isSignedIn) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const data = await fetchProfile();
+        const token = await getToken();
+        const data = await fetchProfile(token);
 
         setFormData({
           gpa: data.gpa ?? "",
@@ -35,7 +43,7 @@ export default function Profile() {
     }
 
     loadProfile();
-  }, []);
+  }, [getToken, isLoaded, isSignedIn]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -52,13 +60,14 @@ export default function Profile() {
     setErrorMessage("");
 
     try {
+      const token = await getToken();
       const result = await updateProfile({
         gpa: formData.gpa === "" ? null : Number(formData.gpa),
         preferred_city: formData.preferred_city,
         preferred_program: formData.preferred_program,
         preferred_language: formData.preferred_language,
         reminders_enabled: formData.reminders_enabled,
-      });
+      }, token);
 
       setMessage(result.message || "Profile updated successfully");
     } catch (error) {

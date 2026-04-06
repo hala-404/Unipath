@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/react";
 
 import {
   fetchApplications,
@@ -82,6 +83,7 @@ function getStatusBadgeClasses(status) {
 
 
 export default function Tracker() {
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -89,8 +91,14 @@ export default function Tracker() {
   const [remindersEnabled, setRemindersEnabled] = useState(true);
 
   async function loadApplications() {
+    if (!isLoaded || !isSignedIn) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const data = await fetchApplications();
+      const token = await getToken();
+      const data = await fetchApplications(token);
 
       const sortedData = (data || []).sort((a, b) => {
         const dateA = a.deadline ? new Date(a.deadline).getTime() : Infinity;
@@ -109,22 +117,28 @@ export default function Tracker() {
   useEffect(() => {
     loadApplications();
     async function loadProfileReminders() {
+      if (!isLoaded || !isSignedIn) {
+        return;
+      }
+
       try {
-        const data = await fetchProfile();
+        const token = await getToken();
+        const data = await fetchProfile(token);
         setRemindersEnabled(data.reminders_enabled ?? true);
       } catch (e) {
         // fallback: keep remindersEnabled as true
       }
     }
     loadProfileReminders();
-  }, []);
+  }, [getToken, isLoaded, isSignedIn]);
 
   async function handleStatusChange(applicationId, newStatus) {
     setMessage("");
     setErrorMessage("");
 
     try {
-      await updateApplicationStatus(applicationId, newStatus);
+      const token = await getToken();
+      await updateApplicationStatus(applicationId, newStatus, token);
 
       setApplications((prev) =>
         prev.map((app) =>
@@ -145,7 +159,8 @@ export default function Tracker() {
     setErrorMessage("");
 
     try {
-      await deleteApplication(applicationId);
+      const token = await getToken();
+      await deleteApplication(applicationId, token);
 
       setApplications((prev) =>
         prev.filter((app) => app.application_id !== applicationId)

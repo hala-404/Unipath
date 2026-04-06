@@ -1,10 +1,11 @@
-import { API_BASE_URL } from "./config";
+const API_URL = import.meta.env.VITE_API_URL;
 
-export async function fetchProfile() {
-  const response = await fetch(`${API_BASE_URL}/profile`, {
+export async function fetchProfile(token) {
+  const response = await fetch(`${API_URL}/profile`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
   });
@@ -18,11 +19,12 @@ export async function fetchProfile() {
   return data;
 }
 
-export async function updateProfile(profileData) {
-  const response = await fetch(`${API_BASE_URL}/profile`, {
+export async function updateProfile(profileData, token) {
+  const response = await fetch(`${API_URL}/profile`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
     body: JSON.stringify(profileData),

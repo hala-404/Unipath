@@ -1,7 +1,10 @@
 import { useState } from "react";
-import { API_BASE_URL } from "../api/config";
+import { useAuth } from "@clerk/react";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function ChatPage() {
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -23,10 +26,16 @@ export default function ChatPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/chat`, {
+      if (!isLoaded || !isSignedIn) {
+        throw new Error("You must be signed in to use chat.");
+      }
+
+      const token = await getToken();
+      const res = await fetch(`${API_URL}/api/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         credentials: "include",
         body: JSON.stringify({

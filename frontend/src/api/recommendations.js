@@ -1,10 +1,11 @@
-import { API_BASE_URL } from "./config";
+const API_URL = import.meta.env.VITE_API_URL;
 
-export async function fetchRecommendations() {
-  const response = await fetch(`${API_BASE_URL}/universities/recommendations`, {
+export async function fetchRecommendations(token) {
+  const response = await fetch(`${API_URL}/universities/recommendations`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
   });

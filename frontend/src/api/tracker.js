@@ -1,10 +1,11 @@
-import { API_BASE_URL } from "./config";
+const API_URL = import.meta.env.VITE_API_URL;
 
-export async function fetchApplications() {
-  const response = await fetch(`${API_BASE_URL}/applications`, {
+export async function fetchApplications(token) {
+  const response = await fetch(`${API_URL}/applications`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
   });
@@ -18,11 +19,12 @@ export async function fetchApplications() {
   return data;
 }
 
-export async function updateApplicationStatus(applicationId, status) {
-  const response = await fetch(`${API_BASE_URL}/applications/${applicationId}`, {
+export async function updateApplicationStatus(applicationId, status, token) {
+  const response = await fetch(`${API_URL}/applications/${applicationId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
     body: JSON.stringify({ status }),
@@ -37,11 +39,12 @@ export async function updateApplicationStatus(applicationId, status) {
   return data;
 }
 
-export async function deleteApplication(applicationId) {
-  const response = await fetch(`${API_BASE_URL}/applications/${applicationId}`, {
+export async function deleteApplication(applicationId, token) {
+  const response = await fetch(`${API_URL}/applications/${applicationId}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
   });
@@ -54,11 +57,12 @@ export async function deleteApplication(applicationId) {
 
   return data;
 }
-export async function addApplication(universityId) {
-  const response = await fetch(`${API_BASE_URL}/applications`, {
+export async function addApplication(universityId, token) {
+  const response = await fetch(`${API_URL}/applications`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
     body: JSON.stringify({
