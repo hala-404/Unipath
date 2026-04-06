@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   fetchApplications,
   updateApplicationStatus,
+  updateApplicationChecklist,
   deleteApplication,
 } from "../api/tracker";
 import { fetchProfile } from "../api/profile";
@@ -79,24 +80,20 @@ const STATUS_OPTIONS = [
   "Rejected",
 ];
 
-const PRIORITY_OPTIONS = ["high", "medium"];
-
 function calculateProgress(checklist = []) {
   if (!checklist.length) return 0;
-  const doneCount = checklist.filter((item) => item.completed).length;
+  const doneCount = checklist.filter((item) => item.done).length;
   return Math.round((doneCount / checklist.length) * 100);
 }
 
 export default function Tracker() {
   const { t } = useLanguage();
-  const token = localStorage.getItem("token");
 
   const [applications, setApplications] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [remindersEnabled, setRemindersEnabled] = useState(true);
-  const [draggedItem, setDraggedItem] = useState(null);
 
   async function loadApplications() {
     try {
@@ -151,140 +148,28 @@ export default function Tracker() {
     }
   }
 
-  const getSafeChecklist = (application) => {
-    if (!application) return [];
+  async function handleChecklistToggle(applicationId, itemId) {
+    const app = applications.find((item) => item.application_id === applicationId);
+    if (!app) return;
 
-    const normalize = (items) =>
-      items.map((item) => ({
-        ...item,
-        priority: item.completed ? null : item.priority || "medium",
-      }));
-
-    if (Array.isArray(application.checklist)) {
-      return normalize(application.checklist);
-    }
-
-    if (typeof application.checklist === "string") {
-      try {
-        const parsed = JSON.parse(application.checklist);
-        return Array.isArray(parsed) ? normalize(parsed) : [];
-      } catch {
-        return [];
-      }
-    }
-
-    return [];
-  };
-
-  const saveChecklist = async (applicationId, updatedChecklist) => {
-    const res = await fetch(
-      `http://localhost:5050/applications/${applicationId}/checklist`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ checklist: updatedChecklist }),
-      }
+    const updatedChecklist = (app.checklist || []).map((item) =>
+      item.id === itemId ? { ...item, done: !item.done } : item
     );
 
-    if (!res.ok) {
-      throw new Error("Failed to update checklist");
-    }
-
-    const data = await res.json();
-
-    setApplications((prev) =>
-      prev.map((app) =>
-        app.application_id === applicationId
-          ? { ...app, checklist: data.checklist }
-          : app
-      )
-    );
-  };
-
-  const toggleChecklistItem = async (applicationId, itemIndex) => {
     try {
-      const application = applications.find(
-        (app) => app.application_id === applicationId
+      await updateApplicationChecklist(applicationId, updatedChecklist);
+
+      setApplications((prev) =>
+        prev.map((item) =>
+          item.application_id === applicationId
+            ? { ...item, checklist: updatedChecklist }
+            : item
+        )
       );
-      if (!application) return;
-
-      const currentChecklist = getSafeChecklist(application);
-      const clickedItem = currentChecklist[itemIndex];
-      if (!clickedItem) return;
-
-      const nextCompleted = !clickedItem.completed;
-
-      let updatedChecklist = currentChecklist.map((item, index) => {
-        if (index !== itemIndex) return item;
-
-        return {
-          ...item,
-          completed: nextCompleted,
-          priority: nextCompleted ? null : item.priority || "medium",
-        };
-      });
-
-      if (nextCompleted) {
-        const [movedItem] = updatedChecklist.splice(itemIndex, 1);
-        updatedChecklist.push(movedItem);
-      }
-
-      await saveChecklist(applicationId, updatedChecklist);
     } catch (error) {
-      console.error("Checklist update failed:", error);
-      setErrorMessage("Failed to update checklist");
+      setErrorMessage(error.message);
     }
-  };
-
-  const changeChecklistPriority = async (applicationId, itemIndex, priority) => {
-    try {
-      const application = applications.find(
-        (app) => app.application_id === applicationId
-      );
-      if (!application) return;
-
-      const currentChecklist = getSafeChecklist(application);
-
-      const updatedChecklist = currentChecklist.map((item, index) =>
-        index === itemIndex ? { ...item, priority } : item
-      );
-
-      await saveChecklist(applicationId, updatedChecklist);
-    } catch (error) {
-      console.error("Priority update failed:", error);
-      setErrorMessage("Failed to update priority");
-    }
-  };
-
-  const moveChecklistItem = async (applicationId, fromIndex, toIndex) => {
-    try {
-      const application = applications.find(
-        (app) => app.application_id === applicationId
-      );
-      if (!application) return;
-
-      const currentChecklist = [...getSafeChecklist(application)];
-      if (
-        fromIndex < 0 ||
-        toIndex < 0 ||
-        fromIndex >= currentChecklist.length ||
-        toIndex >= currentChecklist.length
-      ) {
-        return;
-      }
-
-      const [movedItem] = currentChecklist.splice(fromIndex, 1);
-      currentChecklist.splice(toIndex, 0, movedItem);
-
-      await saveChecklist(applicationId, currentChecklist);
-    } catch (error) {
-      console.error("Reorder failed:", error);
-      setErrorMessage("Failed to reorder checklist");
-    }
-  };
+  }
 
   async function handleDelete(applicationId) {
     if (!confirm(t("tracker.deleteConfirm"))) return;
@@ -294,10 +179,6 @@ export default function Tracker() {
       setApplications((prev) =>
         prev.filter((app) => app.application_id !== applicationId)
       );
-
-      if (expandedId === applicationId) {
-        setExpandedId(null);
-      }
     } catch (error) {
       setErrorMessage(error.message);
     }
@@ -348,36 +229,33 @@ export default function Tracker() {
         </div>
       ) : (
         <div className="grid gap-4">
-          {applications.map((application) => {
-            const deadlineInfo = getDeadlineStatus(application.deadline, t);
-            const cardClasses = getDeadlineCardClasses(application.deadline);
-            const checklist = getSafeChecklist(application);
+          {applications.map((app) => {
+            const deadlineInfo = getDeadlineStatus(app.deadline, t);
+            const cardClasses = getDeadlineCardClasses(app.deadline);
+            const checklist = app.checklist || [];
             const progress = calculateProgress(checklist);
-            const isExpanded = expandedId === application.application_id;
+            const isExpanded = expandedId === app.application_id;
 
             return (
               <div
-                key={application.application_id}
+                key={app.application_id}
                 className={`rounded-3xl p-5 shadow-sm ring-1 ${cardClasses}`}
               >
                 <button
                   type="button"
                   onClick={() =>
                     setExpandedId((prev) =>
-                      prev === application.application_id
-                        ? null
-                        : application.application_id
+                      prev === app.application_id ? null : app.application_id
                     )
                   }
                   className="flex w-full items-start justify-between gap-4 text-left"
                 >
                   <div className="min-w-0">
-                    <h3 className="text-2xl font-bold text-white">
-                      {application.name}
-                    </h3>
+                    <h3 className="text-2xl font-bold text-white">{app.name}</h3>
                     <p className="mt-2 text-lg text-slate-400">
-                      {application.deadline
-                        ? new Date(application.deadline).toLocaleDateString()
+                      {app.program} • Deadline:{" "}
+                      {app.deadline
+                        ? new Date(app.deadline).toLocaleDateString()
                         : "N/A"}
                     </p>
                   </div>
@@ -406,10 +284,10 @@ export default function Tracker() {
                 <div className="mt-4 flex flex-wrap items-center gap-3">
                   <span
                     className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${getStatusBadgeClasses(
-                      application.status
+                      app.status
                     )}`}
                   >
-                    {t(`tracker.statuses.${application.status}`) || application.status}
+                    {t(`tracker.statuses.${app.status}`) || app.status}
                   </span>
 
                   {deadlineInfo && (
@@ -420,141 +298,65 @@ export default function Tracker() {
                 </div>
 
                 {isExpanded && (
-                  <div className="mt-6">
-                    {checklist.length > 0 ? (
-                      <div className="mt-4 space-y-3">
-                        {checklist.map((item, index) => (
-                          <div
-                            key={`${application.application_id}-${index}`}
-                            draggable
-                            onDragStart={() =>
-                              setDraggedItem({
-                                applicationId: application.application_id,
-                                index,
-                              })
+                  <div className="mt-6 space-y-4">
+                    {checklist.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between rounded-2xl border border-slate-800 px-5 py-4"
+                      >
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleChecklistToggle(app.application_id, item.id)
                             }
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={async () => {
-                              if (
-                                !draggedItem ||
-                                draggedItem.applicationId !== application.application_id ||
-                                draggedItem.index === index
-                              ) {
-                                return;
-                              }
-
-                              await moveChecklistItem(
-                                application.application_id,
-                                draggedItem.index,
-                                index
-                              );
-                              setDraggedItem(null);
-                            }}
-                            className="rounded-xl bg-slate-800/60 px-4 py-3"
+                            className={`flex h-8 w-8 items-center justify-center rounded-lg border ${
+                              item.done
+                                ? "border-emerald-500 bg-emerald-500 text-black"
+                                : "border-slate-800 bg-black text-transparent"
+                            }`}
                           >
-                            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                              <div className="flex items-center gap-3">
-                                <span className="cursor-grab text-slate-400">⋮⋮</span>
+                            ✓
+                          </button>
 
-                                <input
-                                  type="checkbox"
-                                  checked={!!item.completed}
-                                  onChange={() =>
-                                    toggleChecklistItem(
-                                      application.application_id,
-                                      index
-                                    )
-                                  }
-                                />
+                          <span
+                            className={`text-2xl ${
+                              item.done
+                                ? "text-slate-500 line-through"
+                                : "text-white"
+                            }`}
+                          >
+                            {item.label}
+                          </span>
+                        </div>
 
-                                <span
-                                  className={
-                                    item.completed
-                                      ? "line-through text-slate-400"
-                                      : "text-white"
-                                  }
-                                >
-                                  {item.label}
-                                </span>
-                              </div>
+                        <div className="flex items-center gap-3">
+                          {!item.done && (
+                            <span
+                              className={`rounded-full px-3 py-1 text-sm font-semibold ${getPriorityClasses(
+                                item.priority
+                              )}`}
+                            >
+                              {item.priority}
+                            </span>
+                          )}
 
-                              <div className="flex flex-wrap items-center gap-2">
-                                {!item.completed && (
-                                  <>
-                                    <span
-                                      className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${getPriorityClasses(
-                                        item.priority || "medium"
-                                      )}`}
-                                    >
-                                      {item.priority === "high" ? "High" : "Medium"}
-                                    </span>
-
-                                    <select
-                                      value={item.priority || "medium"}
-                                      onChange={(e) =>
-                                        changeChecklistPriority(
-                                          application.application_id,
-                                          index,
-                                          e.target.value
-                                        )
-                                      }
-                                      className="rounded-lg border border-slate-700 bg-black px-3 py-2 text-sm text-white outline-none transition focus:border-blue-500"
-                                    >
-                                      {PRIORITY_OPTIONS.map((priority) => (
-                                        <option key={priority} value={priority}>
-                                          {priority === "high" ? "High" : "Medium"}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </>
-                                )}
-
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    moveChecklistItem(
-                                      application.application_id,
-                                      index,
-                                      index - 1
-                                    )
-                                  }
-                                  disabled={index === 0}
-                                  className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                  ↑
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    moveChecklistItem(
-                                      application.application_id,
-                                      index,
-                                      index + 1
-                                    )
-                                  }
-                                  disabled={index === checklist.length - 1}
-                                  className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                  ↓
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                          {item.done ? (
+                            <span className="text-emerald-400 text-2xl">✓</span>
+                          ) : app.deadline ? (
+                            <span className="text-slate-400 text-xl">
+                              {getDaysLeft(app.deadline)}d
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
-                    ) : (
-                      <p className="mt-3 text-slate-400">No checklist available.</p>
-                    )}
+                    ))}
 
-                    <div className="flex flex-wrap items-center gap-3 pt-4">
+                    <div className="flex flex-wrap items-center gap-3 pt-2">
                       <select
-                        value={application.status}
+                        value={app.status}
                         onChange={(e) =>
-                          handleStatusChange(
-                            application.application_id,
-                            e.target.value
-                          )
+                          handleStatusChange(app.application_id, e.target.value)
                         }
                         className="rounded-lg border border-slate-700 bg-black px-3 py-2 text-sm text-white outline-none transition focus:border-blue-500"
                       >
@@ -566,7 +368,7 @@ export default function Tracker() {
                       </select>
 
                       <button
-                        onClick={() => handleDelete(application.application_id)}
+                        onClick={() => handleDelete(app.application_id)}
                         className="rounded-lg bg-red-950/50 px-3 py-2 text-sm font-medium text-red-300 transition hover:bg-red-900/60"
                       >
                         {t("tracker.deleteBtn")}

@@ -640,12 +640,7 @@ async function getTracker(userId) {
 // RESPONSE GENERATION
 // ============================================
 
-async function generateResponse(actionResult, intent, profile, message, history, language) {
-  const replyLanguage =
-    language === "zh" || language === "chinese"
-      ? "Chinese"
-      : "English";
-
+async function generateResponse(actionResult, intent, profile, message, history) {
   const systemPrompt = `You are UniPath Assistant, a friendly and knowledgeable university application advisor.
 
 CURRENT ACTION RESULT:
@@ -669,7 +664,6 @@ RESPONSE GUIDELINES:
 6. If no results found, suggest alternatives or ask for different criteria
 7. Use the actual data from ACTION RESULT - don't make up universities
 8. If the action type is "chat" or "advice" or "explain", respond naturally without data
-9. Always reply in ${replyLanguage}
 
 FORMAT:
 - Don't use bullet points unless listing 4+ items
@@ -695,7 +689,7 @@ Respond to the user's message naturally using the action result data.`;
 const chatWithAdvisor = async (req, res) => {
   try {
     const userId = req.user.user_id;
-    const { message, history = [], language } = req.body;
+    const { message, history = [] } = req.body;
 
     if (!message || !message.trim()) {
       return res.status(400).json({ message: "Message is required." });
@@ -735,7 +729,7 @@ const chatWithAdvisor = async (req, res) => {
 
     // Step 4: Generate natural language response
     console.log("=== Generating Response ===");
-    const reply = await generateResponse(actionResult, intent, profile, message, history, language);
+    const reply = await generateResponse(actionResult, intent, profile, message, history);
 
     // Step 5: Return response with optional data for UI rendering
     const response = {
