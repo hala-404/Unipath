@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
+import { useLocation } from "react-router-dom";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function ChatPage() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
+  const location = useLocation();
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -14,6 +16,12 @@ export default function ChatPage() {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.starterMessage) {
+      setInput(location.state.starterMessage);
+    }
+  }, [location.state]);
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
