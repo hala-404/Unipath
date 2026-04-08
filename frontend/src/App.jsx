@@ -26,9 +26,9 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/recommendations" element={<Recommendations />} />
-          <Route path="/universities/:id" element={<UniversityDetails />} />
           <Route path="/tracker" element={<Tracker />} />
           <Route path="/chat" element={<ChatPage />} />
+          <Route path="/universities/:id" element={<UniversityDetails />} />
         </Routes>
       </div>
     </div>
