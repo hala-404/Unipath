@@ -1,13 +1,14 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import Navbar from "./components/Navbar";
 
+import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import Recommendations from "./pages/Recommendations";
 import Tracker from "./pages/Tracker";
 import ChatPage from "./pages/ChatPage";
 import UniversityDetails from "./pages/UniversityDetails";
+import Compare from "./pages/Compare";
 
 export default function App() {
   const location = useLocation();
@@ -18,19 +19,19 @@ export default function App() {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       <Navbar />
 
-      <div className="mx-auto max-w-6xl px-6 py-8">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/recommendations" element={<Recommendations />} />
-          <Route path="/tracker" element={<Tracker />} />
-          <Route path="/chat" element={<ChatPage />} />
-          <Route path="/universities/:id" element={<UniversityDetails />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/recommendations" element={<Recommendations />} />
+        <Route path="/tracker" element={<Tracker />} />
+        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/universities/:id" element={<UniversityDetails />} />
+        <Route path="/university-details" element={<UniversityDetails />} />
+        <Route path="/compare" element={<Compare />} />
+      </Routes>
     </div>
   );
 }
