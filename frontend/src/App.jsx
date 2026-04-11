@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Recommendations from "./pages/Recommendations";
 import Tracker from "./pages/Tracker";
@@ -18,20 +19,34 @@ export default function App() {
     setRefreshKey((prev) => prev + 1);
   }, [location.pathname]);
 
+  const isHomePage = location.pathname === "/";
+
+  if (isHomePage) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-900">
+        <Routes>
+          <Route path="/" element={<Home />} />
+        </Routes>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-900">
       <Navbar />
 
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/recommendations" element={<Recommendations />} />
-        <Route path="/tracker" element={<Tracker />} />
-        <Route path="/chat" element={<ChatPage />} />
-        <Route path="/universities/:id" element={<UniversityDetails />} />
-        <Route path="/university-details" element={<UniversityDetails />} />
-        <Route path="/compare" element={<Compare />} />
-      </Routes>
+      <main className="ml-[290px] min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+        <Routes>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/recommendations" element={<Recommendations />} />
+          <Route path="/tracker" element={<Tracker />} />
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/universities/:id" element={<UniversityDetails />} />
+          <Route path="/university-details" element={<UniversityDetails />} />
+          <Route path="/compare" element={<Compare />} />
+        </Routes>
+      </main>
     </div>
   );
 }

@@ -6,6 +6,7 @@ export default function Profile() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
 
   const [formData, setFormData] = useState({
+    full_name: "",
     gpa: "",
     preferred_city: "",
     preferred_country: "",
@@ -33,6 +34,7 @@ export default function Profile() {
         const data = await fetchProfile(token);
 
         setFormData({
+          full_name: data.full_name ?? "",
           gpa: data.gpa ?? "",
           preferred_city: data.preferred_city ?? "",
           preferred_country: data.preferred_country ?? "",
@@ -94,6 +96,7 @@ export default function Profile() {
 
       const result = await updateProfile(
         {
+          full_name: formData.full_name.trim() === "" ? null : formData.full_name.trim(),
           gpa: formData.gpa === "" ? null : Number(formData.gpa),
           preferred_city:
             formData.preferred_city.trim() === "" ? null : formData.preferred_city.trim(),
@@ -111,6 +114,7 @@ export default function Profile() {
       );
 
       setFormData({
+        full_name: result.profile?.full_name ?? "",
         gpa: result.profile?.gpa ?? "",
         preferred_city: result.profile?.preferred_city ?? "",
         preferred_country: result.profile?.preferred_country ?? "",
@@ -133,151 +137,215 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-8 md:px-8">
-      <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-3xl font-bold text-slate-900">Profile Preferences</h1>
-        <p className="mt-2 text-slate-600">
-          Manage the profile details used for your recommendations.
-        </p>
+    <div className="min-h-screen bg-slate-50 px-4 py-8 md:px-6">
+      <div className="mx-auto max-w-5xl space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            Profile & Preferences
+          </h1>
+          <p className="mt-2 max-w-3xl text-base leading-relaxed text-slate-600">
+            Keep your profile updated to get the most accurate university recommendations.
+            The more we know about you, the better we can match you.
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">GPA</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              max="4"
-              name="gpa"
-              value={formData.gpa}
-              onChange={handleChange}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-              placeholder="Optional, e.g. 3.6"
-            />
-            <p className="mt-1 text-sm text-slate-500">
-              Optional. Leave empty to include universities with any GPA requirement.
-            </p>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Preferred City</label>
-            <input
-              type="text"
-              name="preferred_city"
-              value={formData.preferred_city}
-              onChange={handleChange}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-              placeholder="Optional, enter any city"
-            />
-            <p className="mt-1 text-sm text-slate-500">
-              Optional. Leave empty to include universities in any city.
-            </p>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Preferred Country</label>
-            <input
-              type="text"
-              name="preferred_country"
-              value={formData.preferred_country}
-              onChange={handleChange}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-              placeholder="Optional, enter any country"
-            />
-            <p className="mt-1 text-sm text-slate-500">
-              Optional. Leave empty to include universities in any country.
-            </p>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Preferred Program</label>
-            <input
-              type="text"
-              name="preferred_program"
-              value={formData.preferred_program}
-              onChange={handleChange}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-              placeholder="Optional, enter any program"
-            />
-            <p className="mt-1 text-sm text-slate-500">
-              Optional. Leave empty to include any program.
-            </p>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Preferred Language</label>
-            <input
-              type="text"
-              name="preferred_language"
-              value={formData.preferred_language}
-              onChange={handleChange}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-              placeholder="Optional, enter any language"
-            />
-            <p className="mt-1 text-sm text-slate-500">
-              Optional. Leave empty to include any language.
-            </p>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">
-              Maximum Tuition Per Year
-            </label>
-            <input
-              type="number"
-              min="0"
-              name="max_tuition"
-              value={formData.max_tuition}
-              onChange={handleChange}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-              placeholder="Optional, e.g. 30000"
-            />
-            <p className="mt-1 text-sm text-slate-500">
-              Optional. Leave empty to include universities with any tuition.
-            </p>
-          </div>
-
-          <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <input
-              type="checkbox"
-              name="reminders_enabled"
-              checked={formData.reminders_enabled}
-              onChange={handleChange}
-              className="h-5 w-5 accent-emerald-600"
-            />
-            <div>
-              <p className="font-medium text-slate-800">Enable reminders</p>
-              <p className="text-sm text-slate-500">
-                Show reminder support for important deadlines.
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-end justify-between gap-4">
+            <div className="flex-1">
+              <h2 className="text-xl font-semibold text-slate-900">Profile Completion</h2>
+              <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-200">
+                <div className="h-full w-[100%] rounded-full bg-emerald-600" />
+              </div>
+              <p className="mt-3 text-sm text-slate-500">
+                Your profile is complete. You&apos;ll get the best recommendations.
               </p>
             </div>
-          </label>
+            <div className="text-right">
+              <div className="text-4xl font-bold text-emerald-600">100%</div>
+              <div className="text-sm text-slate-500">complete</div>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="text-xl font-semibold text-slate-900">Personal Information</h2>
+              <p className="mt-2 text-sm text-slate-500">Basic information about you</p>
+
+              <div className="mt-6 space-y-5">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    name="full_name"
+                    value={formData.full_name}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-500"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Preferred Country
+                  </label>
+                  <input
+                    type="text"
+                    name="preferred_country"
+                    value={formData.preferred_country}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-500"
+                    placeholder="Any"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="text-xl font-semibold text-slate-900">Academic Profile</h2>
+              <p className="mt-2 text-sm text-slate-500">Your academic background</p>
+
+              <div className="mt-6 space-y-5">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    GPA (on 4.0 scale)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="4"
+                    name="gpa"
+                    value={formData.gpa}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-500"
+                    placeholder="3.6"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Preferred Program
+                  </label>
+                  <input
+                    type="text"
+                    name="preferred_program"
+                    value={formData.preferred_program}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-500"
+                    placeholder="Computer Science"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="text-xl font-semibold text-slate-900">Location Preferences</h2>
+              <p className="mt-2 text-sm text-slate-500">Where would you like to study?</p>
+
+              <div className="mt-6 space-y-5">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Preferred City / Region
+                  </label>
+                  <input
+                    type="text"
+                    name="preferred_city"
+                    value={formData.preferred_city}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-500"
+                    placeholder="Any"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Preferred Language
+                  </label>
+                  <input
+                    type="text"
+                    name="preferred_language"
+                    value={formData.preferred_language}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-500"
+                    placeholder="English"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="text-xl font-semibold text-slate-900">Budget & Financial</h2>
+              <p className="mt-2 text-sm text-slate-500">Your financial preferences</p>
+
+              <div className="mt-6 space-y-5">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Annual Budget (USD)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    name="max_tuition"
+                    value={formData.max_tuition}
+                    onChange={handleChange}
+                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-500"
+                    placeholder="30000"
+                  />
+                  <p className="mt-2 text-sm text-slate-500">
+                    Maximum amount you can spend per year on tuition
+                  </p>
+                </div>
+
+                <label className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div>
+                    <p className="font-medium text-slate-800">Enable reminders</p>
+                    <p className="text-sm text-slate-500">
+                      Show reminder support for important deadlines
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    name="reminders_enabled"
+                    checked={formData.reminders_enabled}
+                    onChange={handleChange}
+                    className="h-5 w-5 accent-emerald-600"
+                  />
+                </label>
+              </div>
+            </section>
+          </div>
 
           {message ? (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700">
               {message}
             </div>
           ) : null}
 
           {errorMessage ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
               {errorMessage}
             </div>
           ) : null}
 
           {validationError ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700">
               {validationError}
             </div>
           ) : null}
 
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-xl bg-emerald-600 px-5 py-3 font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-          >
-            {saving ? "Saving..." : "Save Preferences"}
-          </button>
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-2xl bg-emerald-600 px-6 py-3 text-base font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {saving ? "Saving..." : "Save Profile"}
+            </button>
+          </div>
         </form>
       </div>
     </div>

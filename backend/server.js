@@ -12,6 +12,7 @@ const chatRoutes = require("./routes/chat.routes");
 const profileRoutes = require("./routes/profile.routes");
 const trackerRoutes = require("./routes/tracker.routes");
 const universityRoutes = require("./routes/university.routes");
+const dashboardRoutes = require("./routes/dashboard.routes");
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use("/profile", profileRoutes);
 app.use("/applications", trackerRoutes);
 app.use("/universities", universityRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/dashboard", dashboardRoutes);
 
 // Health check
 app.get("/health", async (req, res) => {

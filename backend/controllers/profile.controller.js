@@ -1,7 +1,13 @@
 const pool = require("../db/pool");
 const { ensureLocalUser } = require("../utils/ensureLocalUser");
+const { logActivity } = require("../utils/logActivity");
 
 async function ensureProfileColumns() {
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS full_name TEXT
+  `);
+
   await pool.query(`
     ALTER TABLE users
     ADD COLUMN IF NOT EXISTS preferred_country TEXT
@@ -20,7 +26,7 @@ async function getProfile(req, res) {
     const user_id = localUser.id;
 
     const result = await pool.query(
-      `SELECT gpa, preferred_city, preferred_country, preferred_program, preferred_language, max_tuition, reminders_enabled
+      `SELECT full_name, gpa, preferred_city, preferred_country, preferred_program, preferred_language, max_tuition, reminders_enabled
        FROM users
        WHERE id = $1`,
       [user_id]
@@ -43,6 +49,7 @@ async function updateProfile(req, res) {
     const localUser = await ensureLocalUser(pool, req);
     const user_id = localUser.id;
     const {
+      full_name,
       gpa,
       preferred_city,
       preferred_country,
@@ -77,16 +84,18 @@ async function updateProfile(req, res) {
     const result = await pool.query(
       `UPDATE users
        SET
-         gpa = $1,
-         preferred_city = $2,
-         preferred_country = $3,
-         preferred_program = $4,
-         preferred_language = $5,
-         max_tuition = $6,
-         reminders_enabled = $7
-       WHERE id = $8
-       RETURNING gpa, preferred_city, preferred_country, preferred_program, preferred_language, max_tuition, reminders_enabled`,
+         full_name = $1,
+         gpa = $2,
+         preferred_city = $3,
+         preferred_country = $4,
+         preferred_program = $5,
+         preferred_language = $6,
+         max_tuition = $7,
+         reminders_enabled = $8
+       WHERE id = $9
+       RETURNING full_name, gpa, preferred_city, preferred_country, preferred_program, preferred_language, max_tuition, reminders_enabled`,
       [
+        full_name?.trim() || null,
         gpa ?? null,
         preferred_city ?? null,
         preferred_country ?? null,
@@ -101,6 +110,8 @@ async function updateProfile(req, res) {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "User not found" });
     }
+
+    await logActivity(user_id, "updated", "profile", "Profile information");
 
     return res.json({
       message: "Profile updated successfully",

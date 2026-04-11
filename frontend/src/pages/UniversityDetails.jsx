@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   CalendarClock,
@@ -103,10 +103,48 @@ function getRequiredDocuments(university) {
   ];
 }
 
+function getOptimizedImage(url, width = 1200, height = 700) {
+  if (!url || !url.includes("res.cloudinary.com")) return url;
+  return url.replace(
+    "/upload/",
+    `/upload/f_auto,q_auto,c_fill,g_auto,w_${width},h_${height}/`
+  );
+}
+
 export default function UniversityDetails() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const university = state?.university;
+  const { id } = useParams();
+
+  const [university, setUniversity] = useState(state?.university || null);
+  const [loading, setLoading] = useState(!state?.university);
+
+  useEffect(() => {
+    async function loadUniversity() {
+      if (state?.university || !id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:5050/universities/${id}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to load university");
+        }
+
+        setUniversity(data);
+      } catch (error) {
+        console.error(error.message);
+        setUniversity(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadUniversity();
+  }, [id, state]);
 
   const reasons = useMemo(
     () => (university ? getReasons(university) : []),
@@ -119,6 +157,14 @@ export default function UniversityDetails() {
   );
 
   const remainingDays = university ? daysRemaining(university.deadline) : null;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
+        Loading university details...
+      </div>
+    );
+  }
 
   if (!university) {
     return (
@@ -141,11 +187,13 @@ export default function UniversityDetails() {
     );
   }
 
-  const imageUrl =
+  const rawImageUrl =
     university.image_url ||
     university.image ||
     university.photo_url ||
     "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1600&q=80";
+
+  const imageUrl = getOptimizedImage(rawImageUrl, 1200, 700);
 
   const fitScore = university.fit_score ?? university.score ?? 0;
   const risk = university.risk || "Match";
@@ -162,56 +210,70 @@ export default function UniversityDetails() {
         </button>
 
         <div className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
-          <div className="relative h-[430px] w-full">
-            <img
-              src={imageUrl}
-              alt={university.name}
-              className="h-full w-full object-cover"
+          <div className="relative min-h-[320px] md:min-h-[380px]">
+            <div
+              className="absolute inset-0 scale-110 bg-cover bg-center blur-2xl"
+              style={{ backgroundImage: `url(${imageUrl})` }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/35 to-transparent" />
+            <div className="absolute inset-0 bg-slate-950/45" />
 
-            <div className="absolute left-6 top-6 flex flex-wrap gap-3 md:left-8 md:top-8">
-              {university.world_ranking != null && (
-                <div className="inline-flex items-center gap-2 rounded-2xl bg-white/90 px-4 py-2 text-sm md:text-base font-semibold text-slate-900 backdrop-blur">
-                  <Trophy className="h-5 w-5" />
-                  #{university.world_ranking} World Ranking
+            <div className="relative z-10 grid gap-8 p-6 md:grid-cols-[340px_1fr] md:p-8">
+              <div className="overflow-hidden rounded-[28px] border border-white/20 bg-white/10 shadow-2xl backdrop-blur">
+                <img
+                  src={imageUrl}
+                  alt={university.name}
+                  className="h-[240px] w-full object-cover md:h-[300px]"
+                  loading="eager"
+                  onError={(e) => {
+                    e.currentTarget.src =
+                      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1200&q=80";
+                  }}
+                />
+              </div>
+
+              <div className="flex flex-col justify-between">
+                <div>
+                  <div className="mb-4 flex flex-wrap gap-3">
+                    {university.world_ranking != null && (
+                      <div className="inline-flex items-center gap-2 rounded-2xl bg-white/90 px-4 py-2 text-sm md:text-base font-semibold text-slate-900 backdrop-blur">
+                        <Trophy className="h-5 w-5" />
+                        #{university.world_ranking} World Ranking
+                      </div>
+                    )}
+
+                    <div
+                      className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm md:text-base font-medium backdrop-blur ${getRiskStyles(
+                        risk
+                      )}`}
+                    >
+                      <ShieldCheck className="h-5 w-5" />
+                      {risk}
+                    </div>
+
+                    <div className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2 text-sm md:text-base font-semibold text-white shadow-lg">
+                      {fitScore}% fit
+                    </div>
+                  </div>
+
+                  <h1 className="max-w-4xl text-3xl md:text-4xl font-bold tracking-tight text-white">
+                    {university.name}
+                  </h1>
+
+                  <div className="mt-3 flex items-center gap-3 text-slate-200">
+                    <MapPin className="h-5 w-5" />
+                    <span className="text-base md:text-lg">
+                      {university.city}, {university.country}
+                    </span>
+                  </div>
                 </div>
-              )}
 
-              <div
-                className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm md:text-base font-medium backdrop-blur ${getRiskStyles(
-                  risk
-                )}`}
-              >
-                <ShieldCheck className="h-5 w-5" />
-                {risk}
+                <p className="mt-6 max-w-3xl text-sm md:text-base leading-relaxed text-slate-100">
+                  {university.description ||
+                    `${university.name} is a strong option for students interested in ${university.program}. It offers an international academic environment, a competitive program structure, and a profile alignment based on your saved preferences.`}
+                </p>
               </div>
-            </div>
-
-            <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8">
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white">
-                {university.name}
-              </h1>
-
-              <div className="mt-3 flex items-center gap-3 text-slate-200">
-                <MapPin className="h-5 w-5 md:h-6 md:w-6" />
-                <span className="text-lg md:text-xl">
-                  {university.city}, {university.country}
-                </span>
-              </div>
-            </div>
-
-            <div className="absolute bottom-6 right-6 rounded-3xl border border-emerald-500/20 bg-emerald-500/90 px-6 py-4 text-xl md:text-2xl font-semibold text-white backdrop-blur md:bottom-8 md:right-8">
-              {fitScore}% fit
             </div>
           </div>
-        </div>
-
-        <div className="mt-10">
-          <p className="max-w-5xl text-base md:text-lg leading-relaxed text-slate-700">
-            {university.description ||
-              `${university.name} is a strong option for students interested in ${university.program}. It offers an international academic environment, a competitive program structure, and a profile alignment based on your saved preferences.`}
-          </p>
         </div>
 
         <div className="mt-10 grid gap-8 xl:grid-cols-[1.9fr_0.9fr]">

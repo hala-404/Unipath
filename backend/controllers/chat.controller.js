@@ -542,4 +542,74 @@ NOW RESPOND TO THE USER'S MESSAGE:`;
   }
 };
 
-module.exports = { chatWithAdvisor };
+const getChatSuggestions = async (req, res) => {
+  try {
+    const localUser = await ensureLocalUser(pool, req);
+    const user_id = localUser.id;
+
+    const profileResult = await pool.query(
+      `SELECT preferred_program, preferred_city, preferred_country
+       FROM users
+       WHERE id = $1`,
+      [user_id]
+    );
+
+    const applicationsResult = await pool.query(
+      `SELECT
+         a.id AS application_id,
+         a.status,
+         u.name,
+         u.program,
+         u.city
+       FROM applications a
+       JOIN universities u ON a.university_id = u.id
+       WHERE a.user_id = $1
+       ORDER BY a.id DESC`,
+      [user_id]
+    );
+
+    const profile = profileResult.rows[0] || {};
+    const applications = applicationsResult.rows || [];
+    const suggestions = [];
+
+    if (profile.preferred_program && profile.preferred_city) {
+      suggestions.push(
+        `Recommend universities for ${profile.preferred_program} in ${profile.preferred_city}`
+      );
+    } else if (profile.preferred_program) {
+      suggestions.push(
+        `Recommend universities for ${profile.preferred_program}`
+      );
+    } else {
+      suggestions.push("Recommend universities for my profile");
+    }
+
+    if (applications.length >= 2) {
+      suggestions.push(
+        `Compare ${applications[0].name} and ${applications[1].name} for me`
+      );
+    } else if (applications.length === 1) {
+      suggestions.push(`What are my chances at ${applications[0].name}?`);
+    }
+
+    const notStarted = applications.find((app) => app.status === "Not Started");
+    if (notStarted) {
+      suggestions.push(`What should I prepare first for ${notStarted.name}?`);
+    }
+
+    const inProgress = applications.find((app) => app.status === "In Progress");
+    if (inProgress) {
+      suggestions.push(
+        `What should I finish next for my ${inProgress.name} application?`
+      );
+    }
+
+    const finalSuggestions = [...new Set(suggestions)].slice(0, 4);
+
+    return res.json({ suggestions: finalSuggestions });
+  } catch (err) {
+    return res.status(err.status || 500).json({ error: err.message });
+  }
+};
+
+module.exports = { chatWithAdvisor, getChatSuggestions };

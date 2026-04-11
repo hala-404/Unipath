@@ -103,6 +103,14 @@ function isAnyProfile(profile) {
   return noGpa && noCity && noCountry && noProgram && noLanguage && noBudget;
 }
 
+function getOptimizedImage(url, width = 1200, height = 700) {
+  if (!url || !url.includes("res.cloudinary.com")) return url;
+  return url.replace(
+    "/upload/",
+    `/upload/f_auto,q_auto,c_fill,g_auto,w_${width},h_${height}/`
+  );
+}
+
 function UniversityCard({
   university,
   getToken,
@@ -131,9 +139,13 @@ function UniversityCard({
     ),
   ].filter(Boolean);
 
-  const imageUrl =
+  const rawImageUrl =
     university.image_url ||
-    "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1200&q=80";
+    university.image ||
+    university.photo_url ||
+    "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1600&q=80";
+
+  const imageUrl = getOptimizedImage(rawImageUrl, 800, 500);
 
   async function handleAddToTracker() {
     setShowMenu(false);
@@ -166,36 +178,43 @@ function UniversityCard({
   return (
     <div className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm">
       {/* IMAGE */}
-      <div className="relative h-64 w-full overflow-hidden">
+      <div className="relative h-64 w-full overflow-hidden bg-slate-100">
         <img
           src={imageUrl}
           alt={university.name}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover transition duration-500 hover:scale-105"
+          loading="lazy"
+          onError={(e) => {
+            e.currentTarget.src =
+              "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1200&q=80";
+          }}
         />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/20 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-transparent" />
 
         {university.world_ranking != null && (
-          <div className="absolute left-5 top-5 rounded-2xl bg-white/90 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur">
+          <div className="absolute left-4 top-4 rounded-2xl bg-white/95 px-4 py-2 text-base font-semibold text-slate-900 shadow-sm">
             #{university.world_ranking} World
           </div>
         )}
 
-        <div className="absolute right-5 top-5 rounded-2xl bg-emerald-50/95 px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm backdrop-blur">
+        <div className="absolute right-4 top-4 rounded-2xl bg-emerald-500 px-4 py-2 text-base font-semibold text-white shadow-sm">
           {fitScore}% fit
+        </div>
+
+        <div className="absolute bottom-4 left-4 right-4">
+          <h3 className="line-clamp-2 text-2xl font-bold tracking-tight text-white drop-shadow-sm">
+            {university.name}
+          </h3>
+          <p className="mt-1 flex items-center gap-2 text-sm text-slate-200">
+            <MapPin className="h-4 w-4" />
+            {university.city}, {university.country}
+          </p>
         </div>
       </div>
 
       {/* CONTENT */}
       <div className="px-6 pb-6 pt-7">
-        <h3 className="text-xl font-bold tracking-tight text-slate-900 md:text-2xl">
-          {university.name}
-        </h3>
-
-        <p className="mt-2 text-sm text-slate-600">
-          {university.city}, {university.country}
-        </p>
-
         <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 text-slate-700">
           <p className="text-sm">
             <span className="font-semibold">Program:</span> {university.program || "N/A"}

@@ -1,5 +1,6 @@
 const pool = require("../db/pool");
 const { ensureLocalUser } = require("../utils/ensureLocalUser");
+const { logActivity } = require("../utils/logActivity");
 
 const defaultChecklist = [
   { label: "Transcript", completed: false, priority: "high" },
@@ -34,6 +35,16 @@ async function createApplication(req, res) {
         JSON.stringify(defaultChecklist),
       ]
     );
+
+    const universityResult = await pool.query(
+      `SELECT name FROM universities WHERE id = $1`,
+      [university_id]
+    );
+
+    const universityName =
+      universityResult.rows[0]?.name || `University #${university_id}`;
+
+    await logActivity(user_id, "added", "university", universityName);
 
     return res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -94,6 +105,23 @@ async function updateApplicationStatus(req, res) {
       return res.status(404).json({ error: "Application not found (or not yours)" });
     }
 
+    const appResult = await pool.query(
+      `SELECT u.name
+       FROM applications a
+       JOIN universities u ON a.university_id = u.id
+       WHERE a.id = $1 AND a.user_id = $2`,
+      [id, user_id]
+    );
+
+    const universityName = appResult.rows[0]?.name || `Application #${id}`;
+
+    await logActivity(
+      user_id,
+      "updated",
+      "application",
+      `${universityName} (${status})`
+    );
+
     return res.json(result.rows[0]);
   } catch (err) {
     return res.status(err.status || 500).json({ error: err.message });
@@ -123,6 +151,18 @@ async function updateApplicationChecklist(req, res) {
       return res.status(404).json({ error: "Application not found (or not yours)" });
     }
 
+    const appResult = await pool.query(
+      `SELECT u.name
+       FROM applications a
+       JOIN universities u ON a.university_id = u.id
+       WHERE a.id = $1 AND a.user_id = $2`,
+      [id, user_id]
+    );
+
+    const universityName = appResult.rows[0]?.name || `Application #${id}`;
+
+    await logActivity(user_id, "updated", "checklist", universityName);
+
     return res.json(result.rows[0]);
   } catch (err) {
     return res.status(err.status || 500).json({ error: err.message });
@@ -145,6 +185,20 @@ async function deleteApplication(req, res) {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Application not found (or not yours)" });
     }
+
+    let deletedUniversityName = `Application #${id}`;
+
+    if (result.rows[0]?.university_id) {
+      const universityResult = await pool.query(
+        `SELECT name FROM universities WHERE id = $1`,
+        [result.rows[0].university_id]
+      );
+
+      deletedUniversityName =
+        universityResult.rows[0]?.name || deletedUniversityName;
+    }
+
+    await logActivity(user_id, "deleted", "application", deletedUniversityName);
 
     return res.json({ deleted: true, application: result.rows[0] });
   } catch (err) {

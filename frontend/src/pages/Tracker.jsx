@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@clerk/react";
+import { useLocation } from "react-router-dom";
 
 import {
   fetchApplications,
@@ -95,14 +96,46 @@ function calculateProgress(checklist = []) {
   return Math.round((doneCount / checklist.length) * 100);
 }
 
+function getOverallChecklistStats(applications) {
+  const allItems = applications.flatMap((app) => {
+    if (!app?.checklist) return [];
+
+    if (Array.isArray(app.checklist)) return app.checklist;
+
+    if (typeof app.checklist === "string") {
+      try {
+        const parsed = JSON.parse(app.checklist);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
+  });
+
+  const completed = allItems.filter((item) => item.completed).length;
+  const total = allItems.length;
+  const remaining = total - completed;
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  return { completed, total, remaining, percent };
+}
+
 export default function Tracker() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
+  const location = useLocation();
+  const appRefs = useRef({});
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [message, setMessage] = useState("");
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
+
+  const queryParams = new URLSearchParams(location.search);
+  const targetAppId = queryParams.get("app");
+  const focus = queryParams.get("focus");
 
   async function loadApplications() {
     if (!isLoaded || !isSignedIn) {
@@ -149,6 +182,56 @@ export default function Tracker() {
 
     loadProfileReminders();
   }, [getToken, isLoaded, isSignedIn]);
+
+  useEffect(() => {
+    if (!targetAppId) return;
+
+    const targetId = String(targetAppId);
+    const appExists = applications.some(
+      (app) => String(app.application_id) === targetId
+    );
+
+    if (!appExists) return;
+
+    setExpandedId(Number.isNaN(Number(targetId)) ? targetId : Number(targetId));
+
+    requestAnimationFrame(() => {
+      const el = appRefs.current[targetId];
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("ring-2", "ring-emerald-400");
+        setTimeout(() => {
+          el.classList.remove("ring-2", "ring-emerald-400");
+        }, 2000);
+      }
+    });
+  }, [targetAppId, applications]);
+
+  useEffect(() => {
+    if (!focus || !targetAppId) return;
+
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`${focus}-${targetAppId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("ring-2", "ring-emerald-400");
+        setTimeout(() => {
+          el.classList.remove("ring-2", "ring-emerald-400");
+        }, 2000);
+      }
+    });
+  }, [focus, targetAppId, applications, expandedId]);
+
+  const getChecklistItemAnchorId = (appId, label) => {
+    const text = String(label || "").toLowerCase();
+    if (text.includes("personal statement")) {
+      return `statement-${appId}`;
+    }
+    if (text.includes("recommendation")) {
+      return `recommendation-${appId}`;
+    }
+    return undefined;
+  };
 
   async function handleStatusChange(applicationId, newStatus) {
     setMessage("");
@@ -340,6 +423,21 @@ export default function Tracker() {
     return diffDays < 0;
   });
 
+  const overallStats = getOverallChecklistStats(applications);
+
+  const needsAttentionItems = activeApplications
+    .flatMap((app) => {
+      const checklist = getSafeChecklist(app);
+      return checklist
+        .filter((item) => !item.completed && item.priority === "high")
+        .map((item) => ({
+          label: item.label,
+          university: app.name,
+          deadline: app.deadline,
+        }));
+    })
+    .slice(0, 3);
+
   if (loading) {
     return (
       <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
@@ -350,37 +448,84 @@ export default function Tracker() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
-        <h1 className="text-2xl font-bold text-slate-900">Application Tracker</h1>
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <h1 className="text-xl font-semibold text-slate-900">Application Tracker</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Track saved universities and update your application progress.
+          Stay on top of your application deadlines and required documents.
+          Track what&apos;s completed and what needs attention.
         </p>
       </div>
 
-      {remindersEnabled ? (
-        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <h2 className="text-lg font-semibold text-slate-900">Reminder Summary</h2>
+      <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold text-slate-900">Overall Progress</h2>
 
-          <div className="mt-3 space-y-2 text-sm">
-            {urgentApplications.length > 0 ? (
-              <p className="text-yellow-600">
-                {urgentApplications.length} active application
-                {urgentApplications.length === 1 ? "" : "s"} ha
-                {urgentApplications.length === 1 ? "s" : "ve"} a deadline within 7 days.
-              </p>
-            ) : null}
+            <div className="mt-5 h-4 overflow-hidden rounded-full bg-slate-200">
+              <div
+                className="h-full rounded-full bg-amber-600 transition-all"
+                style={{ width: `${overallStats.percent}%` }}
+              />
+            </div>
 
-            {passedApplications.length > 0 ? (
-              <p className="text-red-600">
-                {passedApplications.length} active application
-                {passedApplications.length === 1 ? "" : "s"} ha
-                {passedApplications.length === 1 ? "s" : "ve"} a passed deadline.
-              </p>
-            ) : null}
+            <p className="mt-2 text-sm text-slate-600">
+              {overallStats.completed} of {overallStats.total} items completed
+            </p>
+          </div>
 
-            {urgentApplications.length === 0 && passedApplications.length === 0 ? (
-              <p className="text-green-600">No urgent reminders right now.</p>
-            ) : null}
+          <div className="flex gap-4">
+            <div className="min-w-[90px] rounded-2xl bg-emerald-50 px-4 py-3 text-center">
+              <div className="text-xl font-bold text-emerald-700">
+                {overallStats.completed}
+              </div>
+              <div className="mt-1 text-base text-slate-600">Completed</div>
+            </div>
+
+            <div className="min-w-[90px] rounded-2xl bg-amber-50 px-4 py-3 text-center">
+              <div className="text-xl font-bold text-amber-700">
+                {overallStats.remaining}
+              </div>
+              <div className="mt-1 text-base text-slate-600">Remaining</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {remindersEnabled && needsAttentionItems.length > 0 ? (
+        <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-amber-200">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl text-amber-600">!</span>
+            <h2 className="text-lg font-semibold text-slate-900">Needs Attention</h2>
+          </div>
+
+          <p className="mt-3 text-base text-slate-600">
+            These items require immediate attention based on upcoming deadlines.
+          </p>
+
+          <div className="mt-6 space-y-3">
+            {needsAttentionItems.map((item, index) => {
+              const deadlineStatus = getDeadlineStatus(item.deadline);
+
+              return (
+                <div
+                  key={`${item.university}-${item.label}-${index}`}
+                  className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-amber-600">!</span>
+                    <p className="text-lg text-slate-800">
+                      <span className="font-semibold">{item.label}</span> - {item.university}
+                    </p>
+                  </div>
+
+                  {deadlineStatus ? (
+                    <span className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600">
+                      {deadlineStatus.text}
+                    </span>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : null}
@@ -412,6 +557,11 @@ export default function Tracker() {
             return (
               <div
                 key={app.application_id}
+                ref={(el) => {
+                  if (el) {
+                    appRefs.current[String(app.application_id)] = el;
+                  }
+                }}
                 className={`rounded-2xl p-6 shadow-sm transition hover:shadow-md ring-1 ${getDeadlineCardClasses(
                   app.deadline
                 )}`}
@@ -502,6 +652,10 @@ export default function Tracker() {
                                 />
 
                                 <span
+                                  id={getChecklistItemAnchorId(
+                                    app.application_id,
+                                    item.label
+                                  )}
                                   className={
                                     item.completed
                                       ? "text-slate-400 line-through"
