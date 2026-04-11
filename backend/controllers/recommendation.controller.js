@@ -1,190 +1,255 @@
 const pool = require("../db/pool");
 const { ensureLocalUser } = require("../utils/ensureLocalUser");
 
-function calculateFitScore(university, userGpa, preferences) {
-  let score = 0;
+async function ensureRecommendationColumns() {
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS preferred_country TEXT
+  `);
 
-  // GPA component (40 points max)
-  if (userGpa !== null) {
-    const gpaDiff = userGpa - Number(university.min_gpa);
-    if (gpaDiff >= 0.5) score += 40;
-    else if (gpaDiff >= 0.3) score += 35;
-    else if (gpaDiff >= 0.1) score += 28;
-    else if (gpaDiff >= 0) score += 20;
-    else if (gpaDiff >= -0.1) score += 10;
-    else if (gpaDiff >= -0.3) score += 5;
-  }
-
-  // Program match (25 points)
-  if (
-    preferences.program &&
-    university.program.toLowerCase().includes(preferences.program.toLowerCase())
-  ) {
-    score += 25;
-  }
-
-  // Language match (15 points)
-  if (
-    preferences.language &&
-    university.language
-      .toLowerCase()
-      .includes(preferences.language.toLowerCase())
-  ) {
-    score += 15;
-  }
-
-  // City match (10 points)
-  if (
-    preferences.city &&
-    university.city.toLowerCase().includes(preferences.city.toLowerCase())
-  ) {
-    score += 10;
-  }
-
-  // Acceptance rate factor (10 points)
-  const rate = Number(university.acceptance_rate) || 50;
-  if (rate >= 50) score += 10;
-  else if (rate >= 30) score += 7;
-  else if (rate >= 15) score += 4;
-  else score += 1;
-
-  return Math.min(score, 100);
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS max_tuition NUMERIC
+  `);
 }
 
-function classifyRisk(university, userGpa) {
+function normalizeText(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function textMatches(universityValue, preferredValue) {
+  const pref = normalizeText(preferredValue);
+  if (!pref) return true;
+
+  const uni = normalizeText(universityValue);
+  return uni.includes(pref) || pref.includes(uni);
+}
+
+function isAnyProfile(profile) {
+  const noGpa = profile.gpa == null || profile.gpa === "";
+  const noCity = !String(profile.preferred_city || "").trim();
+  const noCountry = !String(profile.preferred_country || "").trim();
+  const noProgram = !String(profile.preferred_program || "").trim();
+  const noLanguage = !String(profile.preferred_language || "").trim();
+  const noBudget = profile.max_tuition == null || profile.max_tuition === "";
+
+  return noGpa && noCity && noCountry && noProgram && noLanguage && noBudget;
+}
+
+function locationMatches(university, profile) {
+  const preferredCity = normalizeText(profile.preferred_city);
+  const preferredCountry = normalizeText(profile.preferred_country);
+
+  const uniCity = normalizeText(university.city);
+  const uniCountry = normalizeText(university.country);
+
+  if (!preferredCity && !preferredCountry) {
+    return true;
+  }
+
+  if (preferredCity && preferredCity === uniCity) {
+    return true;
+  }
+
+  if (preferredCountry && preferredCountry === uniCountry) {
+    return true;
+  }
+
+  return false;
+}
+
+function hasReason(university, keyword) {
+  return (university.reasons || []).some((reason) =>
+    reason.toLowerCase().includes(keyword)
+  );
+}
+
+function computeRecommendation(university, profile) {
+  const hasUserGpa = profile.gpa !== null && profile.gpa !== undefined && profile.gpa !== "";
+  const userGpa = hasUserGpa ? Number(profile.gpa) : null;
   const minGpa = Number(university.min_gpa);
-  const acceptanceRate = Number(university.acceptance_rate) || 50;
 
-  if (userGpa === null) return "Match";
+  if (hasUserGpa && !Number.isNaN(userGpa) && !Number.isNaN(minGpa) && userGpa < minGpa) {
+    return null;
+  }
 
-  const gpaDiff = userGpa - minGpa;
+  let matched = 0;
+  let total = 0;
+  const reasons = [];
 
-  // Safe: GPA well above requirement AND reasonable acceptance rate
-  if (gpaDiff >= 0.3 && acceptanceRate >= 35) return "Safe";
-  if (gpaDiff >= 0.2 && acceptanceRate >= 50) return "Safe";
+  // location: city OR country
+  const preferredCity = normalizeText(profile.preferred_city);
+  const preferredCountry = normalizeText(profile.preferred_country);
+  const uniCity = normalizeText(university.city);
+  const uniCountry = normalizeText(university.country);
 
-  // Reach: GPA below minimum OR very low acceptance with thin margin
-  if (gpaDiff < 0) return "Reach";
-  if (gpaDiff < 0.1 && acceptanceRate < 15) return "Reach";
+  if (preferredCity || preferredCountry) {
+    total += 1;
 
-  // Everything else is Match
-  return "Match";
+    if (
+      (preferredCity && preferredCity === uniCity) ||
+      (preferredCountry && preferredCountry === uniCountry)
+    ) {
+      matched += 1;
+      reasons.push(
+        preferredCity && preferredCity === uniCity
+          ? `Matches your preferred city: ${university.city}`
+          : `Matches your preferred country: ${university.country}`
+      );
+    }
+  }
+
+  // program
+  const preferredProgram = normalizeText(profile.preferred_program);
+  const uniProgram = normalizeText(university.program);
+
+  if (preferredProgram) {
+    total += 1;
+    if (uniProgram.includes(preferredProgram) || preferredProgram.includes(uniProgram)) {
+      matched += 1;
+      reasons.push(`Matches your preferred program: ${university.program}`);
+    }
+  }
+
+  // language
+  const preferredLanguage = normalizeText(profile.preferred_language);
+  const uniLanguage = normalizeText(university.language);
+
+  if (preferredLanguage) {
+    total += 1;
+    if (preferredLanguage === uniLanguage) {
+      matched += 1;
+      reasons.push(`Matches your preferred language: ${university.language}`);
+    }
+  }
+
+  // budget
+  const maxTuition = Number(profile.max_tuition);
+  const uniTuition = Number(university.tuition_fee);
+
+  if (!Number.isNaN(maxTuition) && maxTuition > 0 && !Number.isNaN(uniTuition)) {
+    total += 1;
+    if (uniTuition <= maxTuition) {
+      matched += 1;
+      reasons.push(`Tuition is within your budget: $${uniTuition.toLocaleString()}`);
+    }
+  }
+
+  // GPA reason
+  if (hasUserGpa && !Number.isNaN(userGpa) && !Number.isNaN(minGpa)) {
+    reasons.unshift(`Your GPA of ${userGpa} meets the minimum GPA of ${minGpa}`);
+  }
+
+  const fit_score = total === 0 ? 100 : Math.round((matched / total) * 100);
+
+  let risk = "Match";
+  if (hasUserGpa && !Number.isNaN(userGpa) && !Number.isNaN(minGpa)) {
+    const gap = userGpa - minGpa;
+    if (gap >= 0.4) risk = "Safe";
+    else if (gap < 0.1) risk = "Reach";
+  }
+
+  return {
+    ...university,
+    user_gpa: profile.gpa,
+    fit_score,
+    risk,
+    reasons,
+    matchedCriteria: matched,
+    totalCriteria: total,
+  };
 }
 
 async function getRecommendations(req, res) {
   try {
+    await ensureRecommendationColumns();
     const localUser = await ensureLocalUser(pool, req);
     const user_id = localUser.id;
 
-    let { gpa, city, program, language } = req.query;
-
-    // Load saved profile
     const profileRes = await pool.query(
-      `SELECT gpa, preferred_city, preferred_program, preferred_language
+      `SELECT
+         gpa,
+         preferred_city,
+         preferred_country,
+         preferred_program,
+         preferred_language,
+         max_tuition
        FROM users
        WHERE id = $1`,
       [user_id]
     );
 
     if (profileRes.rows.length === 0) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "Profile not found" });
     }
 
     const profile = profileRes.rows[0];
 
-    if (!gpa) gpa = profile.gpa;
-    if (!city) city = profile.preferred_city;
-    if (!program) program = profile.preferred_program;
-    if (!language) language = profile.preferred_language;
+    const universityRes = await pool.query(`
+      SELECT
+        id,
+        name,
+        city,
+        country,
+        program,
+        language,
+        min_gpa,
+        tuition_fee,
+        deadline,
+        acceptance_rate,
+        world_ranking,
+        website_url,
+        image_url
+      FROM universities
+    `);
 
-    const userGpa =
-      gpa !== null && gpa !== undefined && gpa !== ""
-        ? Number(gpa)
-        : null;
+    const evaluated = universityRes.rows
+      .map((uni) => computeRecommendation(uni, profile))
+      .filter(Boolean)
+      .sort((a, b) => {
+        if (b.fit_score !== a.fit_score) return b.fit_score - a.fit_score;
+        return (a.world_ranking ?? 999999) - (b.world_ranking ?? 999999);
+      });
 
-    const preferences = { city, program, language };
+    const anyProfile = isAnyProfile(profile);
 
-    const result = await pool.query("SELECT * FROM universities");
-    const universities = result.rows;
+    let exactMatches = [];
+    let alternativeRecommendations = [];
 
-    // -------------------------
-    // 1. Exact matches
-    // -------------------------
-    let exactMatches = universities;
+    if (anyProfile) {
+      exactMatches = evaluated;
+      alternativeRecommendations = [];
+    } else {
+      exactMatches = evaluated.filter((u) => {
+        const programOk = textMatches(u.program, profile.preferred_program);
+        const languageOk =
+          !profile.preferred_language ||
+          normalizeText(u.language) === normalizeText(profile.preferred_language);
+        const locationOk = locationMatches(u, profile);
 
-    if (city && city !== "") {
-      exactMatches = exactMatches.filter((u) =>
-        u.city.toLowerCase().includes(city.toLowerCase())
-      );
+        return programOk && languageOk && locationOk;
+      });
+
+      alternativeRecommendations = evaluated.filter((u) => {
+        const programOk = textMatches(u.program, profile.preferred_program);
+        const languageOk =
+          !profile.preferred_language ||
+          normalizeText(u.language) === normalizeText(profile.preferred_language);
+        const locationOk = locationMatches(u, profile);
+
+        return programOk && languageOk && !locationOk;
+      });
     }
-
-    if (program && program !== "") {
-      exactMatches = exactMatches.filter((u) =>
-        u.program.toLowerCase().includes(program.toLowerCase())
-      );
-    }
-
-    if (language && language !== "") {
-      exactMatches = exactMatches.filter((u) =>
-        u.language.toLowerCase().includes(language.toLowerCase())
-      );
-    }
-
-    exactMatches = exactMatches
-      .map((u) => {
-        const risk = classifyRisk(u, userGpa);
-        let fit_score = calculateFitScore(u, userGpa, preferences);
-
-        // Cap Reach universities at 75%
-        if (risk === "Reach") {
-          fit_score = Math.min(fit_score, 75);
-        }
-
-        return {
-          ...u,
-          fit_score,
-          risk,
-          score: fit_score,
-          tuition_fee: u.tuition_fee,
-          acceptance_rate: u.acceptance_rate,
-          world_ranking: u.world_ranking,
-          user_gpa: userGpa,
-        };
-      })
-      .sort((a, b) => b.fit_score - a.fit_score);
-
-    // -------------------------
-    // 2. Alternative recommendations
-    // -------------------------
-    const exactIds = new Set(exactMatches.map((u) => u.id));
-
-    let alternativeRecommendations = universities
-      .filter((u) => !exactIds.has(u.id))
-      .map((u) => {
-        const risk = classifyRisk(u, userGpa);
-        let fit_score = calculateFitScore(u, userGpa, preferences);
-
-        // Cap Reach universities at 75%
-        if (risk === "Reach") {
-          fit_score = Math.min(fit_score, 75);
-        }
-
-        return {
-          ...u,
-          fit_score,
-          risk,
-          score: fit_score,
-          tuition_fee: u.tuition_fee,
-          acceptance_rate: u.acceptance_rate,
-          world_ranking: u.world_ranking,
-          user_gpa: userGpa,
-        };
-      })
-      .filter((u) => u.fit_score > 0)
-      .sort((a, b) => b.fit_score - a.fit_score)
-      .slice(0, 10);
 
     return res.json({
+      profileSummary: {
+        gpa: profile.gpa,
+        preferred_city: profile.preferred_city,
+        preferred_country: profile.preferred_country,
+        preferred_program: profile.preferred_program,
+        preferred_language: profile.preferred_language,
+        max_tuition: profile.max_tuition,
+      },
       exactMatches,
       alternativeRecommendations,
     });

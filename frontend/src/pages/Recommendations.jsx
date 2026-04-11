@@ -1,18 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/react";
 import {
-  ChevronDown,
-  ChevronUp,
-  Globe,
-  GraduationCap,
-  CalendarDays,
-  MapPin,
-  CirclePlus,
-  CheckCircle2,
+  Brain,
   BrainCircuit,
+  ChevronDown,
+  GraduationCap,
+  Globe,
   DollarSign,
   Sparkles,
+  MapPin,
 } from "lucide-react";
 import { fetchRecommendations } from "../api/recommendations";
 import { addApplication } from "../api/tracker";
@@ -22,50 +19,25 @@ import {
   isUniversityCompared,
 } from "../utils/compare";
 
-function formatTuition(university) {
-  const value = university.tuition_fee;
+function formatTuition(value) {
   if (value == null || value === "") return "N/A";
-  if (typeof value === "string" && value.trim().length > 0) return value;
+  if (typeof value === "string" && value.trim()) return value;
   if (Number(value) === 0) return "Free";
   return `$${Number(value).toLocaleString()}/yr`;
 }
 
 function formatDeadline(deadline) {
   if (!deadline) return "N/A";
-  const date = new Date(deadline);
-  if (Number.isNaN(date.getTime())) return deadline;
-  return date.toLocaleDateString(undefined, {
+  const d = new Date(deadline);
+  if (Number.isNaN(d.getTime())) return deadline;
+  return d.toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
     day: "numeric",
   });
 }
 
-function buildReasons(university) {
-  const reasons = [];
-
-  if (university.user_gpa != null && university.min_gpa != null) {
-    if (Number(university.user_gpa) >= Number(university.min_gpa)) {
-      reasons.push(`Strong match with your GPA of ${university.user_gpa}`);
-    } else {
-      reasons.push(
-        `Your GPA of ${university.user_gpa} is below the minimum ${university.min_gpa}, so this is more competitive`
-      );
-    }
-  }
-
-  if (university.program) {
-    reasons.push(`Aligns with your interest in ${university.program}`);
-  }
-
-  if (university.language) {
-    reasons.push(`${university.language}-taught program matches your preference`);
-  }
-
-  return reasons;
-}
-
-function getRiskStyles(risk) {
+function riskBadgeClasses(risk) {
   switch (risk) {
     case "Safe":
       return "border-green-200 bg-green-50 text-green-700";
@@ -76,49 +48,97 @@ function getRiskStyles(risk) {
   }
 }
 
+function formatBudget(value) {
+  if (value == null || value === "" || Number.isNaN(Number(value))) return "Any";
+  return `USD ${Number(value).toLocaleString()}/yr`;
+}
+
+function getLocationLabel(profile) {
+  const city = profile?.preferred_city?.trim();
+  const country = profile?.preferred_country?.trim();
+
+  if (city && country) return `${city}, ${country}`;
+  if (city) return city;
+  if (country) return country;
+  return "Any";
+}
+
+function buildFilterPills(profile) {
+  return [
+    `GPA: ${profile?.gpa ?? "Any"}`,
+    `city: ${profile?.preferred_city || "Any"}`,
+    `country: ${profile?.preferred_country || "Any"}`,
+    `program: ${profile?.preferred_program || "Any"}`,
+    `language: ${profile?.preferred_language || "Any"}`,
+    `budget: ${
+      profile?.max_tuition != null && profile?.max_tuition !== ""
+        ? `<= ${Number(profile.max_tuition).toLocaleString()}`
+        : "Any"
+    }`,
+  ];
+}
+
+function getMissingPreferenceMessage(profile) {
+  const missing = [];
+
+  if (profile?.gpa == null || profile?.gpa === "") missing.push("GPA");
+  if (!profile?.preferred_city && !profile?.preferred_country) missing.push("location");
+  if (!profile?.preferred_program) missing.push("program");
+  if (!profile?.preferred_language) missing.push("language");
+  if (profile?.max_tuition == null || profile?.max_tuition === "") missing.push("budget");
+
+  if (missing.length === 0) return "";
+
+  return `Some preferences are set to "Any". Add more details like ${missing.join(", ")} to get more precise recommendations.`;
+}
+
+function isAnyProfile(profile) {
+  const noGpa = profile?.gpa == null || profile?.gpa === "";
+  const noCity = !profile?.preferred_city;
+  const noCountry = !profile?.preferred_country;
+  const noProgram = !profile?.preferred_program;
+  const noLanguage = !profile?.preferred_language;
+  const noBudget = profile?.max_tuition == null || profile?.max_tuition === "";
+
+  return noGpa && noCity && noCountry && noProgram && noLanguage && noBudget;
+}
+
 function UniversityCard({
   university,
   getToken,
   isLoaded,
   isSignedIn,
   onCompared,
+  navigate,
 }) {
-  const navigate = useNavigate();
-  const [showReasons, setShowReasons] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const menuRef = useRef(null);
+  const [showScoreDetails, setShowScoreDetails] = useState(false);
 
   const fitScore = university.fit_score ?? university.score ?? 0;
   const risk = university.risk || "Match";
-  const reasons = buildReasons(university);
   const compared = isUniversityCompared(university.id);
+  const matchedCriteria = university.matchedCriteria ?? null;
+  const totalCriteria = university.totalCriteria ?? null;
+
+  const scoreBreakdown = [
+    university.user_gpa != null && university.min_gpa != null
+      ? `GPA eligibility: your GPA ${university.user_gpa} meets the minimum ${university.min_gpa}`
+      : null,
+    ...(university.reasons || []).filter(
+      (reason) =>
+        !reason.toLowerCase().includes("gpa") &&
+        !reason.toLowerCase().includes("minimum gpa")
+    ),
+  ].filter(Boolean);
 
   const imageUrl =
     university.image_url ||
-    university.image ||
-    university.photo_url ||
     "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1200&q=80";
 
-  useEffect(() => {
-    function handleOutsideClick(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setShowMenu(false);
-      }
-    }
-
-    if (showMenu) {
-      document.addEventListener("mousedown", handleOutsideClick);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-    };
-  }, [showMenu]);
-
   async function handleAddToTracker() {
-    try {
-      setShowMenu(false);
+    setShowMenu(false);
 
+    try {
       if (!isLoaded || !isSignedIn) {
         throw new Error("You must be signed in to add an application.");
       }
@@ -138,147 +158,125 @@ function UniversityCard({
   }
 
   function handleViewDetails() {
-    navigate("/university-details", { state: { university } });
+    navigate("/university-details", {
+      state: { university },
+    });
   }
 
   return (
-    <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white text-slate-900 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-      <div className="relative h-72 w-full overflow-hidden">
+    <div className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm">
+      {/* IMAGE */}
+      <div className="relative h-64 w-full overflow-hidden">
         <img
           src={imageUrl}
           alt={university.name}
           className="h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/35 to-transparent" />
+
+        <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/20 to-transparent" />
 
         {university.world_ranking != null && (
-          <div className="absolute left-4 top-4 rounded-2xl bg-white/90 px-4 py-2 text-lg font-semibold text-slate-900 backdrop-blur">
+          <div className="absolute left-5 top-5 rounded-2xl bg-white/90 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur">
             #{university.world_ranking} World
           </div>
         )}
 
-        <div className="absolute right-4 top-4 rounded-2xl bg-emerald-500/90 px-4 py-2 text-lg font-semibold text-white backdrop-blur">
+        <div className="absolute right-5 top-5 rounded-2xl bg-emerald-50/95 px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm backdrop-blur">
           {fitScore}% fit
         </div>
       </div>
 
+      {/* CONTENT */}
       <div className="px-6 pb-6 pt-7">
-        <h3 className="text-3xl font-bold tracking-tight text-slate-900">
+        <h3 className="text-xl font-bold tracking-tight text-slate-900 md:text-2xl">
           {university.name}
         </h3>
 
-        <div className="mt-4 flex items-center gap-3 text-slate-500">
-          <MapPin className="h-6 w-6" />
-          <p className="text-lg md:text-xl">
-            {university.city}, {university.country}
+        <p className="mt-2 text-sm text-slate-600">
+          {university.city}, {university.country}
+        </p>
+
+        <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 text-slate-700">
+          <p className="text-sm">
+            <span className="font-semibold">Program:</span> {university.program || "N/A"}
+          </p>
+
+          <p className="text-sm">
+            <span className="font-semibold">Language:</span> {university.language || "N/A"}
+          </p>
+
+          <p className="text-sm">
+            <span className="font-semibold">Tuition:</span> {formatTuition(university.tuition_fee)}
+          </p>
+
+          <p className="text-sm">
+            <span className="font-semibold">Deadline:</span> {formatDeadline(university.deadline)}
           </p>
         </div>
 
-        <div className="mt-10 grid grid-cols-2 gap-x-8 gap-y-6 text-slate-700">
-          <div className="flex items-center gap-3">
-            <GraduationCap className="h-7 w-7 text-emerald-600" />
-            <span className="text-lg md:text-xl">{university.program || "N/A"}</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Globe className="h-7 w-7 text-emerald-600" />
-            <span className="text-lg md:text-xl">{university.language || "N/A"}</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <DollarSign className="h-7 w-7 text-emerald-600" />
-            <span className="text-lg md:text-xl">{formatTuition(university)}</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <CalendarDays className="h-7 w-7 text-emerald-600" />
-            <span className="text-lg md:text-xl">{formatDeadline(university.deadline)}</span>
-          </div>
-        </div>
-
-        <div className="mt-8 flex flex-wrap items-center gap-4">
+        <div className="mt-6 flex items-center gap-4">
           <span
-            className={`inline-flex rounded-full border px-5 py-3 text-sm md:text-base font-medium ${getRiskStyles(
+            className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-semibold ${riskBadgeClasses(
               risk
             )}`}
           >
             {risk}
           </span>
 
-          <span className="text-lg md:text-xl text-slate-500">
+          <span className="text-sm text-slate-600">
             Min GPA: {university.min_gpa ?? "N/A"}
           </span>
         </div>
 
-        <div className="mt-8 rounded-[24px] bg-slate-50 px-5 py-5">
-          <button
-            type="button"
-            onClick={() => setShowReasons((prev) => !prev)}
-            className="flex w-full items-center justify-between text-left"
-          >
-            <div className="flex items-center gap-3">
-              <BrainCircuit className="h-6 w-6 text-slate-500" />
-              <span className="text-lg md:text-xl font-semibold text-slate-800">
-                Why this score?
-              </span>
-            </div>
+        {/* WHY THIS MATCHES */}
+        <div className="mt-6 rounded-[24px] bg-slate-50 p-6">
+          <h4 className="mb-3 text-sm font-semibold text-slate-700">
+            Why this matches you
+          </h4>
 
-            {showReasons ? (
-              <ChevronUp className="h-6 w-6 text-slate-500" />
-            ) : (
-              <ChevronDown className="h-6 w-6 text-slate-500" />
-            )}
-          </button>
-
-          {showReasons && (
-            <div className="mt-5 rounded-[22px] bg-white p-5 shadow-sm ring-1 ring-slate-200">
-              <h4 className="mb-4 text-lg md:text-xl font-semibold text-slate-800">
-                Why this matches you
-              </h4>
-
-              <ul className="space-y-4">
-                {reasons.map((reason, index) => (
-                  <li
-                    key={index}
-                    className="flex items-start gap-4 text-slate-700"
-                  >
-                    <CheckCircle2 className="mt-1 h-6 w-6 shrink-0 text-emerald-600" />
-                    <span className="text-base md:text-lg leading-relaxed">{reason}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <ul className="space-y-3">
+            {(university.reasons || []).slice(0, 3).map((reason, index) => (
+              <li key={index} className="flex items-start gap-4">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-emerald-600 text-emerald-600">
+                  ✓
+                </div>
+                <span className="text-sm leading-relaxed text-slate-700">
+                  {reason}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <div className="mt-8 flex items-center gap-4">
+        {/* ACTIONS */}
+        <div className="mt-6 flex items-center gap-4">
           <button
             onClick={handleViewDetails}
-            className="flex-1 rounded-[22px] bg-emerald-600 px-6 py-4 text-sm md:text-base font-medium text-white transition hover:bg-emerald-500"
+            className="flex-1 rounded-[22px] bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
           >
             View Details
           </button>
 
-          <div className="relative" ref={menuRef}>
+          <div className="relative">
             <button
               onClick={() => setShowMenu((prev) => !prev)}
-              className="flex h-[72px] w-[72px] items-center justify-center rounded-[22px] border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50"
+              className="flex h-10 w-10 items-center justify-center rounded-[22px] border border-slate-300 bg-white text-xl text-slate-900 shadow-sm hover:bg-slate-50"
             >
-              <CirclePlus className="h-8 w-8" />
+              +
             </button>
 
             {showMenu && (
-              <div className="absolute bottom-[calc(100%+12px)] right-0 z-30 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+              <div className="absolute bottom-[calc(100%+12px)] right-0 z-30 w-60 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
                 <button
                   onClick={handleAddToTracker}
-                  className="block w-full rounded-xl px-4 py-3 text-left text-base text-slate-700 hover:bg-slate-50"
+                  className="block w-full rounded-xl px-4 py-3 text-left text-base font-medium text-slate-700 hover:bg-slate-100"
                 >
                   Add to Tracker
                 </button>
 
                 <button
                   onClick={handleAddToCompare}
-                  className="block w-full rounded-xl px-4 py-3 text-left text-base text-slate-700 hover:bg-slate-50"
+                  className="block w-full rounded-xl px-4 py-3 text-left text-base font-medium text-slate-700 hover:bg-slate-100"
                 >
                   {compared ? "Already in Compare" : "Add to Compare"}
                 </button>
@@ -286,46 +284,60 @@ function UniversityCard({
             )}
           </div>
         </div>
+
+        <div className="mt-6 border-t border-slate-200 pt-5">
+          <button
+            type="button"
+            onClick={() => setShowScoreDetails((prev) => !prev)}
+            className="flex w-full items-center justify-between text-left"
+          >
+            <div className="flex items-center gap-3">
+              <Brain className="h-6 w-6 text-slate-500" />
+              <span className="text-sm font-semibold text-slate-700">
+                Why this score?
+              </span>
+            </div>
+
+            <ChevronDown
+              className={`h-6 w-6 text-slate-500 transition-transform ${
+                showScoreDetails ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+
+          {showScoreDetails && (
+            <div className="mt-4 rounded-[22px] bg-slate-50 p-5">
+              <p className="mb-3 text-sm text-slate-500">
+                {matchedCriteria != null && totalCriteria != null
+                  ? `This university matched ${matchedCriteria} out of ${totalCriteria} scored preference criteria.`
+                  : "This score is based on how well the university matches your saved profile preferences."}
+              </p>
+
+              <ul className="space-y-3">
+                {scoreBreakdown.map((item, index) => (
+                  <li key={index} className="text-sm leading-relaxed text-slate-700">
+                    • {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 export default function Recommendations() {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
   const navigate = useNavigate();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
 
   const [exactMatches, setExactMatches] = useState([]);
   const [alternativeRecommendations, setAlternativeRecommendations] = useState([]);
+  const [profileSummary, setProfileSummary] = useState({});
+  const [compareCount, setCompareCount] = useState(getComparedUniversities().length);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [compareCount, setCompareCount] = useState(0);
-
-  useEffect(() => {
-    setCompareCount(getComparedUniversities().length);
-  }, []);
-
-  useEffect(() => {
-    async function loadRecommendations() {
-      if (!isLoaded || !isSignedIn) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const token = await getToken();
-        const data = await fetchRecommendations(token);
-        setExactMatches(data.exactMatches || []);
-        setAlternativeRecommendations(data.alternativeRecommendations || []);
-      } catch (error) {
-        setErrorMessage(error.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadRecommendations();
-  }, [getToken, isLoaded, isSignedIn]);
 
   function handleCompared(result) {
     setCompareCount(result.items.length);
@@ -345,20 +357,39 @@ export default function Recommendations() {
     }
   }
 
+  useEffect(() => {
+    async function loadRecommendations() {
+      if (!isLoaded || !isSignedIn) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const token = await getToken();
+        const data = await fetchRecommendations(token);
+        setExactMatches(data.exactMatches || []);
+        setAlternativeRecommendations(data.alternativeRecommendations || []);
+        setProfileSummary(data.profileSummary || {});
+      } catch (error) {
+        setErrorMessage(error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadRecommendations();
+  }, [getToken, isLoaded, isSignedIn]);
+
+  const filterPills = buildFilterPills(profileSummary);
+  const isExploreMode = isAnyProfile(profileSummary);
+  const missingPreferenceMessage = getMissingPreferenceMessage(profileSummary);
+
   if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 px-6 py-10 text-slate-700">
-        Loading recommendations...
-      </div>
-    );
+    return <div className="min-h-screen bg-slate-50 p-8 text-slate-700">Loading recommendations...</div>;
   }
 
   if (errorMessage) {
-    return (
-      <div className="min-h-screen bg-slate-50 px-6 py-10 text-red-600">
-        {errorMessage}
-      </div>
-    );
+    return <div className="min-h-screen bg-slate-50 p-8 text-red-600">{errorMessage}</div>;
   }
 
   return (
@@ -368,37 +399,35 @@ export default function Recommendations() {
           <div className="flex items-center gap-3">
             <Sparkles className="h-6 w-6 text-emerald-600" />
             <h1 className="text-3xl font-bold text-slate-900">
-              AI Recommendations
+              {isExploreMode ? "Explore Universities" : "AI Recommendations"}
             </h1>
           </div>
 
           <p className="mt-2 max-w-3xl text-slate-600">
-            Based on your profile, preferences, and academic goals, our AI has found
-            universities that best match your criteria. Each recommendation includes an
-            explainable fit score.
+            {isExploreMode
+              ? "Explore the universities"
+              : "Based on your saved profile, UniPath found universities that best match your academic eligibility and personal preferences."}
           </p>
         </div>
 
-        <div className="mb-8 rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm">
+        <div className="mb-8 rounded-3xl border border-emerald-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-3">
             <BrainCircuit className="h-5 w-5 text-emerald-600" />
-            <h2 className="text-lg font-semibold text-slate-900">
-              Your Profile Summary
-            </h2>
+            <h2 className="text-lg font-semibold text-slate-900">Your Profile Summary</h2>
           </div>
 
           <p className="mt-1 text-sm text-slate-500">
-            Our AI uses this information to find your best matches
+            These fields are used to score and rank your recommendation results.
           </p>
 
-          <div className="mt-5 grid grid-cols-2 gap-6 md:grid-cols-4">
+          <div className="mt-5 grid grid-cols-2 gap-6 md:grid-cols-5">
             <div className="flex items-center gap-3">
-              <div className="rounded-full bg-emerald-50 p-2">
-                <span className="text-sm font-bold text-emerald-600">↗</span>
-              </div>
+              <div className="rounded-full bg-emerald-50 p-2 text-emerald-600">↗</div>
               <div>
                 <p className="text-sm text-slate-500">GPA</p>
-                <p className="font-semibold text-slate-900">3.6</p>
+                <p className="font-semibold text-slate-900">
+                  {profileSummary.gpa ?? "Not set"}
+                </p>
               </div>
             </div>
 
@@ -408,7 +437,9 @@ export default function Recommendations() {
               </div>
               <div>
                 <p className="text-sm text-slate-500">Program</p>
-                <p className="font-semibold text-slate-900">Computer Science</p>
+                <p className="font-semibold text-slate-900">
+                  {profileSummary.preferred_program || "Any"}
+                </p>
               </div>
             </div>
 
@@ -418,7 +449,21 @@ export default function Recommendations() {
               </div>
               <div>
                 <p className="text-sm text-slate-500">Language</p>
-                <p className="font-semibold text-slate-900">English</p>
+                <p className="font-semibold text-slate-900">
+                  {profileSummary.preferred_language || "Any"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-emerald-50 p-2">
+                <MapPin className="h-4 w-4 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">Location</p>
+                <p className="font-semibold text-slate-900">
+                  {getLocationLabel(profileSummary)}
+                </p>
               </div>
             </div>
 
@@ -427,53 +472,56 @@ export default function Recommendations() {
                 <DollarSign className="h-4 w-4 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Budget</p>
-                <p className="font-semibold text-slate-900">USD 30,000/yr</p>
+                <p className="text-sm text-slate-500">Max Tuition</p>
+                <p className="font-semibold text-slate-900">
+                  {formatBudget(profileSummary.max_tuition)}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mb-10 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-10 flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="text-slate-500">Active filters:</span>
-
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
-              program: Computer Science ×
-            </span>
-
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
-              language: English ×
-            </span>
-
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
-              scholarship: Yes ×
-            </span>
+            {filterPills.length > 0 ? (
+              filterPills.map((pill) => (
+                <span
+                  key={pill}
+                  className="rounded-full bg-slate-100 px-3 py-1 text-slate-700"
+                >
+                  {pill}
+                </span>
+              ))
+            ) : (
+              <span className="text-slate-400">No saved filters yet</span>
+            )}
           </div>
-
-          <div className="flex gap-2">
-            <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
-              Adjust Filters
-            </button>
-
-            <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
-              Refresh
-            </button>
-          </div>
+          <div className="text-sm text-slate-500">Compare selected: {compareCount}/3</div>
         </div>
 
-        <section className="mb-14">
-          <h2 className="mb-2 text-2xl font-bold text-slate-900">Exact Matches</h2>
-          <p className="mb-6 text-slate-600">
-            Universities that directly fit your saved profile.
+        {missingPreferenceMessage ? (
+          <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {missingPreferenceMessage}
+          </div>
+        ) : null}
+
+        <section className="mb-12">
+          <h2 className="mb-2 text-2xl font-bold text-slate-900">
+            {isExploreMode ? "Explore" : "Exact Matches"}
+          </h2>
+          <p className="mb-5 text-slate-600">
+            {isExploreMode
+              ? "Explore the universities"
+              : "Universities with the strongest alignment to your saved profile."}
           </p>
 
           {exactMatches.length === 0 ? (
             <div className="rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-              No exact matches found.
+              No exact matches found for your current preferences.
             </div>
           ) : (
-            <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid items-start gap-6 md:grid-cols-2 xl:grid-cols-3">
               {exactMatches.map((university) => (
                 <UniversityCard
                   key={university.id}
@@ -482,39 +530,43 @@ export default function Recommendations() {
                   isLoaded={isLoaded}
                   isSignedIn={isSignedIn}
                   onCompared={handleCompared}
+                  navigate={navigate}
                 />
               ))}
             </div>
           )}
         </section>
 
-        <section>
-          <h2 className="mb-2 text-2xl font-bold text-slate-900">
-            Other Recommended Options
-          </h2>
-          <p className="mb-6 text-slate-600">
-            Alternatives based on partial match and eligibility.
-          </p>
+        {!isExploreMode && (
+          <section>
+            <h2 className="mb-2 text-2xl font-bold text-slate-900">
+              Other Recommended Options
+            </h2>
+            <p className="mb-5 text-slate-600">
+              Alternative universities that still match your program and language but not your location preference.
+            </p>
 
-          {alternativeRecommendations.length === 0 ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-              No alternative recommendations available.
-            </div>
-          ) : (
-            <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-              {alternativeRecommendations.map((university) => (
-                <UniversityCard
-                  key={university.id}
-                  university={university}
-                  getToken={getToken}
-                  isLoaded={isLoaded}
-                  isSignedIn={isSignedIn}
-                  onCompared={handleCompared}
-                />
-              ))}
-            </div>
-          )}
-        </section>
+            {alternativeRecommendations.length === 0 ? (
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
+                No alternative recommendations available.
+              </div>
+            ) : (
+              <div className="grid items-start gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {alternativeRecommendations.map((university) => (
+                  <UniversityCard
+                    key={university.id}
+                    university={university}
+                    getToken={getToken}
+                    isLoaded={isLoaded}
+                    isSignedIn={isSignedIn}
+                    onCompared={handleCompared}
+                    navigate={navigate}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </div>
   );
