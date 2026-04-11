@@ -23,7 +23,7 @@ export default function App() {
 
   if (isHomePage) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <Routes>
           <Route path="/" element={<Home />} />
         </Routes>
@@ -32,10 +32,10 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-900">
+    <div className="flex min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <Navbar />
 
-      <main className="ml-[290px] min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+      <main className="ml-64 flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950">
         <Routes>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />

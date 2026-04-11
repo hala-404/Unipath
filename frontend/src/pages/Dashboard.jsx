@@ -120,7 +120,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 px-5 py-8 text-slate-600">
+      <div className="min-h-screen bg-slate-50 px-5 py-8 text-slate-600 dark:bg-slate-950 dark:text-slate-400">
         Loading dashboard...
       </div>
     );
@@ -128,7 +128,7 @@ export default function Dashboard() {
 
   if (errorMessage) {
     return (
-      <div className="min-h-screen bg-slate-50 px-5 py-8 text-red-600">
+      <div className="min-h-screen bg-slate-50 px-5 py-8 text-red-600 dark:bg-slate-950 dark:text-red-400">
         {errorMessage}
       </div>
     );
@@ -136,7 +136,7 @@ export default function Dashboard() {
 
   if (!dashboard) {
     return (
-      <div className="min-h-screen bg-slate-50 px-5 py-8 text-slate-600">
+      <div className="min-h-screen bg-slate-50 px-5 py-8 text-slate-600 dark:bg-slate-950 dark:text-slate-400">
         No dashboard data available.
       </div>
     );
@@ -146,20 +146,20 @@ export default function Dashboard() {
     dashboard;
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-6">
+    <div className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 dark:bg-slate-950 dark:text-slate-100 md:px-6">
       <div className="mx-auto max-w-6xl space-y-6">
-        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-r from-white via-white to-emerald-50 p-6 shadow-sm">
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-r from-white via-white to-emerald-50 p-6 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
             Welcome back, {user.name}
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 md:text-base">
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-400 md:text-base">
             Here&apos;s an overview of your university application journey.
             Keep going, you&apos;re making great progress.
           </p>
         </section>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-4 flex items-center justify-between">
               <div className="rounded-xl bg-emerald-50 p-2.5">
                 <GraduationCap className="h-5 w-5 text-emerald-600" />
@@ -167,10 +167,10 @@ export default function Dashboard() {
               <ArrowRight className="h-4 w-4 text-slate-400" />
             </div>
             <div className="text-3xl font-bold text-slate-900">{stats.savedUniversities}</div>
-            <p className="mt-2 text-sm text-slate-600">Saved Universities</p>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Saved Universities</p>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-4 flex items-center justify-between">
               <div className="rounded-xl bg-emerald-50 p-2.5">
                 <ListChecks className="h-5 w-5 text-emerald-600" />
@@ -178,10 +178,10 @@ export default function Dashboard() {
               <ArrowRight className="h-4 w-4 text-slate-400" />
             </div>
             <div className="text-3xl font-bold text-slate-900">{stats.trackedApplications}</div>
-            <p className="mt-2 text-sm text-slate-600">Tracked Applications</p>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Tracked Applications</p>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-4 flex items-center justify-between">
               <div className="rounded-xl bg-emerald-50 p-2.5">
                 <CalendarDays className="h-5 w-5 text-emerald-600" />
@@ -189,10 +189,10 @@ export default function Dashboard() {
               <ArrowRight className="h-4 w-4 text-slate-400" />
             </div>
             <div className="text-3xl font-bold text-slate-900">{stats.upcomingDeadlines}</div>
-            <p className="mt-2 text-sm text-slate-600">Upcoming Deadlines</p>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Upcoming Deadlines</p>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-4 flex items-center justify-between">
               <div className="rounded-xl bg-emerald-50 p-2.5">
                 <UserCircle2 className="h-5 w-5 text-emerald-600" />
@@ -200,23 +200,23 @@ export default function Dashboard() {
               <ArrowRight className="h-4 w-4 text-slate-400" />
             </div>
             <div className="text-3xl font-bold text-slate-900">{stats.profileCompletion}%</div>
-            <p className="mt-2 text-sm text-slate-600">Profile Completion</p>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Profile Completion</p>
           </div>
         </section>
 
         <section className="grid gap-4 xl:grid-cols-[1.8fr_0.9fr]">
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Active Applications</h2>
-                <p className="mt-1 text-sm text-slate-500">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Active Applications</h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   Your tracked university applications
                 </p>
               </div>
 
               <Link
                 to="/tracker"
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 View All
               </Link>
@@ -224,14 +224,14 @@ export default function Dashboard() {
 
             <div className="space-y-4">
               {activeApplications.length === 0 ? (
-                <div className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-500">
+                <div className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-500 dark:bg-slate-950 dark:text-slate-400">
                   No tracked applications yet.
                 </div>
               ) : (
                 activeApplications.map((app) => (
                   <div
                     key={app.application_id}
-                    className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center md:justify-between"
+                    className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center md:justify-between dark:border-slate-800 dark:bg-slate-950"
                   >
                     <div className="flex items-center gap-3">
                       <img
@@ -242,7 +242,7 @@ export default function Dashboard() {
 
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-lg font-semibold text-slate-900">{app.name}</h3>
+                          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{app.name}</h3>
                           <span
                             className={`rounded-full border px-3 py-1 text-xs font-medium ${getStatusStyles(
                               app.status
@@ -252,20 +252,20 @@ export default function Dashboard() {
                           </span>
                         </div>
 
-                        <p className="mt-1 text-sm text-slate-500">
+                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                           {app.program} • {app.city}
                         </p>
                       </div>
                     </div>
 
                     <div className="w-full max-w-[180px]">
-                      <div className="h-2.5 overflow-hidden rounded-full bg-slate-200">
+                      <div className="h-2.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                         <div
                           className={`h-full rounded-full ${getProgressBarColor(app.progress)}`}
                           style={{ width: `${app.progress}%` }}
                         />
                       </div>
-                      <p className="mt-1.5 text-xs text-slate-500">{app.progress}% ready</p>
+                      <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{app.progress}% ready</p>
                     </div>
                   </div>
                 ))
@@ -273,25 +273,25 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-xl font-bold text-slate-900">Recent Activity</h2>
-            <p className="mt-1 text-sm text-slate-500">Your latest actions</p>
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Recent Activity</h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Your latest actions</p>
 
             <div className="mt-6 space-y-5">
               {recentActivity.length === 0 ? (
-                <div className="text-sm text-slate-500">No recent activity yet.</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">No recent activity yet.</div>
               ) : (
                 recentActivity.map((activity) => (
                   <div key={activity.id} className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                       {getActivityIcon(activity)}
                     </div>
 
                     <div>
-                      <p className="text-sm font-medium text-slate-800">
+                      <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
                         {getActivityText(activity)}
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                         {formatTimeAgo(activity.created_at)}
                       </p>
                     </div>
@@ -303,12 +303,12 @@ export default function Dashboard() {
         </section>
 
         <section className="grid gap-4 xl:grid-cols-[1.8fr_0.9fr]">
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-6 flex items-center gap-3">
               <Sparkles className="h-5 w-5 text-emerald-600" />
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Recommended Next Actions</h2>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                   AI-suggested tasks to keep your applications on track
                 </p>
               </div>
@@ -316,29 +316,29 @@ export default function Dashboard() {
 
             <div className="space-y-4">
               {recommendedActions.length === 0 ? (
-                <div className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-500">
+                <div className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-500 dark:bg-slate-950 dark:text-slate-400">
                   No suggested actions right now.
                 </div>
               ) : (
                 recommendedActions.map((action, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4"
+                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-950"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-900">
                         {getActionIcon(index)}
                       </div>
 
                       <div>
-                        <p className="text-base font-semibold text-slate-900">{action.title}</p>
-                        <p className="mt-1 text-sm text-slate-500">{action.subtitle}</p>
+                        <p className="text-base font-semibold text-slate-900 dark:text-slate-100">{action.title}</p>
+                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{action.subtitle}</p>
                       </div>
                     </div>
 
                     <Link
                       to={action.href}
-                      className="text-sm font-semibold text-slate-900 hover:underline"
+                      className="text-sm font-semibold text-slate-900 hover:underline dark:text-slate-100"
                     >
                       {action.cta}
                     </Link>
@@ -348,16 +348,16 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-xl font-bold text-slate-900">Quick Actions</h2>
-            <p className="mt-1 text-sm text-slate-500">Frequently used features</p>
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Quick Actions</h2>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Frequently used features</p>
 
             <div className="mt-6 space-y-3">
               {quickActions.map((action) => (
                 <Link
                   key={action.href}
                   to={action.href}
-                  className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 transition hover:bg-slate-100"
+                  className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 transition hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   {action.label === "Get New Recommendations" && (
                     <Sparkles className="h-5 w-5" />

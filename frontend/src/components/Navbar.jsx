@@ -14,7 +14,10 @@ import {
   MessageCircle,
   UserCircle2,
   LogOut,
+  Moon,
+  Sun,
 } from "lucide-react";
+import useTheme from "../hooks/useTheme";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -28,7 +31,7 @@ const navItems = [
 function SidebarLink({ to, label, icon: Icon, disabled = false }) {
   if (disabled) {
     return (
-      <div className="flex items-center gap-3 rounded-2xl px-4 py-3 text-slate-400">
+      <div className="flex items-center gap-3 rounded-2xl px-4 py-3 text-slate-400 dark:text-slate-500">
         <Icon className="h-5 w-5" />
         <span className="text-base font-medium">{label}</span>
       </div>
@@ -41,8 +44,8 @@ function SidebarLink({ to, label, icon: Icon, disabled = false }) {
       className={({ isActive }) =>
         `flex items-center gap-3 rounded-2xl px-4 py-3 text-base font-medium transition ${
           isActive
-            ? "bg-slate-100 text-slate-900"
-            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+            ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white"
+            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white"
         }`
       }
     >
@@ -54,11 +57,12 @@ function SidebarLink({ to, label, icon: Icon, disabled = false }) {
 
 export default function Navbar() {
   const { signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-[290px] flex-col border-r border-slate-200 bg-white">
-      <div className="border-b border-slate-200 px-6 py-6">
-        <div className="text-3xl font-bold text-emerald-600">UniPath</div>
+    <aside className="fixed left-0 top-0 flex h-screen w-64 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+      <div className="border-b border-slate-200 px-6 py-6 dark:border-slate-800">
+        <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">UniPath</div>
       </div>
 
       <div className="flex-1 px-4 py-4">
@@ -77,17 +81,17 @@ export default function Navbar() {
         </div>
       </div>
 
-      <div className="border-t border-slate-200 px-4 py-4">
+      <div className="border-t border-slate-200 px-4 py-4 dark:border-slate-800">
         <Show when="signed-out">
           <div className="space-y-3">
             <SignInButton mode="modal">
-              <button className="w-full rounded-xl border border-slate-300 px-4 py-3 text-left font-medium text-slate-700 transition hover:bg-slate-50">
+              <button className="w-full rounded-xl border border-slate-300 px-4 py-3 text-left font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
                 Login
               </button>
             </SignInButton>
 
             <SignUpButton mode="modal">
-              <button className="w-full rounded-xl bg-emerald-500 px-4 py-3 text-left font-medium text-white transition hover:bg-emerald-600">
+              <button className="w-full rounded-xl bg-emerald-500 px-4 py-3 text-left font-medium text-white transition hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500">
                 Register
               </button>
             </SignUpButton>
@@ -96,14 +100,31 @@ export default function Navbar() {
 
         <Show when="signed-in">
           <div className="space-y-3">
-            <div className="flex items-center gap-3 rounded-2xl px-3 py-2">
+            <button
+              onClick={toggleTheme}
+              className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-base font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+            >
+              {theme === "light" ? (
+                <>
+                  <Moon className="h-5 w-5" />
+                  Dark Mode
+                </>
+              ) : (
+                <>
+                  <Sun className="h-5 w-5" />
+                  Light Mode
+                </>
+              )}
+            </button>
+
+            <div className="flex items-center gap-3 rounded-2xl px-3 py-2 dark:text-slate-300">
               <UserButton />
-              <span className="text-sm text-slate-500">Account</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400">Account</span>
             </div>
 
             <button
               onClick={() => signOut()}
-              className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-base font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+              className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-base font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
             >
               <LogOut className="h-5 w-5" />
               Sign out

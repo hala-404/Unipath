@@ -164,9 +164,9 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col">
-        <header className="border-b border-slate-200 bg-white px-4 py-5 md:px-8">
+        <header className="border-b border-slate-200 bg-white px-4 py-5 dark:border-slate-800 dark:bg-slate-900 md:px-8">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
               <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm">
@@ -175,10 +175,10 @@ export default function ChatPage() {
               </div>
 
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
                   AI Advisor
                 </h1>
-                <div className="mt-1 flex items-center gap-2 text-slate-500">
+                <div className="mt-1 flex items-center gap-2 text-slate-500 dark:text-slate-400">
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
                   <span className="text-sm md:text-base">
                     Online - Ready to help
@@ -187,7 +187,7 @@ export default function ChatPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-slate-500">
+            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
               <MessageCircle className="h-5 w-5" />
               <span className="text-sm md:text-base">
                 {messageCount} message{messageCount > 1 ? "s" : ""}
@@ -198,14 +198,14 @@ export default function ChatPage() {
 
         <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
           <div className="mx-auto flex h-full max-w-5xl flex-col">
-            <div className="mb-5 rounded-[26px] border border-emerald-100 bg-white p-5 shadow-sm">
+            <div className="mb-5 rounded-[26px] border border-emerald-100 bg-white p-5 shadow-sm dark:border-emerald-950/50 dark:bg-slate-900">
               <div className="flex items-start gap-3">
                 <Sparkles className="mt-1 h-6 w-6 text-emerald-600" />
                 <div className="w-full">
-                  <h2 className="text-2xl font-bold text-slate-900">
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                     How can I help you today?
                   </h2>
-                  <p className="mt-2 text-base leading-relaxed text-slate-600">
+                  <p className="mt-2 text-base leading-relaxed text-slate-600 dark:text-slate-400">
                     I can help you discover universities, explain recommendations,
                     compare options, and guide your application journey.
                   </p>
@@ -220,7 +220,7 @@ export default function ChatPage() {
                     key={suggestion}
                     type="button"
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left text-base font-medium text-slate-800 shadow-sm transition hover:bg-slate-50"
+                    className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left text-base font-medium text-slate-800 shadow-sm transition hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
                     <Lightbulb className="h-5 w-5 shrink-0 text-emerald-600" />
                     <span>{suggestion}</span>
