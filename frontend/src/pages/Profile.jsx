@@ -133,49 +133,49 @@ export default function Profile() {
   }
 
   if (loading) {
-    return <div className="min-h-screen bg-slate-50 p-8 text-slate-700">Loading profile...</div>;
+    return <div className="min-h-screen bg-slate-50 p-8 text-slate-700 dark:bg-slate-950 dark:text-slate-400">Loading profile...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-8 md:px-6">
+    <div className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900 dark:bg-slate-950 dark:text-slate-100 md:px-6">
       <div className="mx-auto max-w-5xl space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             Profile & Preferences
           </h1>
-          <p className="mt-2 max-w-3xl text-base leading-relaxed text-slate-600">
+          <p className="mt-2 max-w-3xl text-base leading-relaxed text-slate-600 dark:text-slate-400">
             Keep your profile updated to get the most accurate university recommendations.
             The more we know about you, the better we can match you.
           </p>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-end justify-between gap-4">
             <div className="flex-1">
-              <h2 className="text-xl font-semibold text-slate-900">Profile Completion</h2>
-              <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-200">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Profile Completion</h2>
+              <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                 <div className="h-full w-[100%] rounded-full bg-emerald-600" />
               </div>
-              <p className="mt-3 text-sm text-slate-500">
+              <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                 Your profile is complete. You&apos;ll get the best recommendations.
               </p>
             </div>
             <div className="text-right">
               <div className="text-4xl font-bold text-emerald-600">100%</div>
-              <div className="text-sm text-slate-500">complete</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400">complete</div>
             </div>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
-            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-xl font-semibold text-slate-900">Personal Information</h2>
-              <p className="mt-2 text-sm text-slate-500">Basic information about you</p>
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Personal Information</h2>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Basic information about you</p>
 
               <div className="mt-6 space-y-5">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                  <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                     Full Name
                   </label>
                   <input
@@ -183,13 +183,13 @@ export default function Profile() {
                     name="full_name"
                     value={formData.full_name}
                     onChange={handleChange}
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-500"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                     placeholder="Enter your full name"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                  <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                     Preferred Country
                   </label>
                   <input
@@ -197,20 +197,20 @@ export default function Profile() {
                     name="preferred_country"
                     value={formData.preferred_country}
                     onChange={handleChange}
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-500"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                     placeholder="Any"
                   />
                 </div>
               </div>
             </section>
 
-            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-xl font-semibold text-slate-900">Academic Profile</h2>
-              <p className="mt-2 text-sm text-slate-500">Your academic background</p>
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Academic Profile</h2>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Your academic background</p>
 
               <div className="mt-6 space-y-5">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                  <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                     GPA (on 4.0 scale)
                   </label>
                   <input
@@ -221,13 +221,13 @@ export default function Profile() {
                     name="gpa"
                     value={formData.gpa}
                     onChange={handleChange}
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-500"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                     placeholder="3.6"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                  <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                     Preferred Program
                   </label>
                   <input
@@ -235,20 +235,20 @@ export default function Profile() {
                     name="preferred_program"
                     value={formData.preferred_program}
                     onChange={handleChange}
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-500"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                     placeholder="Computer Science"
                   />
                 </div>
               </div>
             </section>
 
-            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-xl font-semibold text-slate-900">Location Preferences</h2>
-              <p className="mt-2 text-sm text-slate-500">Where would you like to study?</p>
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Location Preferences</h2>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Where would you like to study?</p>
 
               <div className="mt-6 space-y-5">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                  <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                     Preferred City / Region
                   </label>
                   <input
@@ -256,13 +256,13 @@ export default function Profile() {
                     name="preferred_city"
                     value={formData.preferred_city}
                     onChange={handleChange}
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-500"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                     placeholder="Any"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                  <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                     Preferred Language
                   </label>
                   <input
@@ -270,20 +270,20 @@ export default function Profile() {
                     name="preferred_language"
                     value={formData.preferred_language}
                     onChange={handleChange}
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-500"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                     placeholder="English"
                   />
                 </div>
               </div>
             </section>
 
-            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-xl font-semibold text-slate-900">Budget & Financial</h2>
-              <p className="mt-2 text-sm text-slate-500">Your financial preferences</p>
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Budget & Financial</h2>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Your financial preferences</p>
 
               <div className="mt-6 space-y-5">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                  <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                     Annual Budget (USD)
                   </label>
                   <input
@@ -292,18 +292,18 @@ export default function Profile() {
                     name="max_tuition"
                     value={formData.max_tuition}
                     onChange={handleChange}
-                    className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-base outline-none focus:border-emerald-500"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                     placeholder="30000"
                   />
-                  <p className="mt-2 text-sm text-slate-500">
+                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                     Maximum amount you can spend per year on tuition
                   </p>
                 </div>
 
-                <label className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <label className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-800">
                   <div>
-                    <p className="font-medium text-slate-800">Enable reminders</p>
-                    <p className="text-sm text-slate-500">
+                    <p className="font-medium text-slate-800 dark:text-slate-100">Enable reminders</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
                       Show reminder support for important deadlines
                     </p>
                   </div>
@@ -320,13 +320,13 @@ export default function Profile() {
           </div>
 
           {message ? (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300">
               {message}
             </div>
           ) : null}
 
           {errorMessage ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">
               {errorMessage}
             </div>
           ) : null}

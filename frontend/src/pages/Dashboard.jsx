@@ -149,7 +149,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-slate-50 px-4 py-6 text-slate-900 dark:bg-slate-950 dark:text-slate-100 md:px-6">
       <div className="mx-auto max-w-6xl space-y-6">
         <section className="overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-r from-white via-white to-emerald-50 p-6 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 md:text-3xl">
             Welcome back, {user.name}
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-400 md:text-base">
@@ -164,9 +164,9 @@ export default function Dashboard() {
               <div className="rounded-xl bg-emerald-50 p-2.5">
                 <GraduationCap className="h-5 w-5 text-emerald-600" />
               </div>
-              <ArrowRight className="h-4 w-4 text-slate-400" />
+              <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
             </div>
-            <div className="text-3xl font-bold text-slate-900">{stats.savedUniversities}</div>
+            <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">{stats.savedUniversities}</div>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Saved Universities</p>
           </div>
 
@@ -175,9 +175,9 @@ export default function Dashboard() {
               <div className="rounded-xl bg-emerald-50 p-2.5">
                 <ListChecks className="h-5 w-5 text-emerald-600" />
               </div>
-              <ArrowRight className="h-4 w-4 text-slate-400" />
+              <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
             </div>
-            <div className="text-3xl font-bold text-slate-900">{stats.trackedApplications}</div>
+            <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">{stats.trackedApplications}</div>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Tracked Applications</p>
           </div>
 
@@ -186,9 +186,9 @@ export default function Dashboard() {
               <div className="rounded-xl bg-emerald-50 p-2.5">
                 <CalendarDays className="h-5 w-5 text-emerald-600" />
               </div>
-              <ArrowRight className="h-4 w-4 text-slate-400" />
+              <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
             </div>
-            <div className="text-3xl font-bold text-slate-900">{stats.upcomingDeadlines}</div>
+            <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">{stats.upcomingDeadlines}</div>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Upcoming Deadlines</p>
           </div>
 
@@ -197,9 +197,9 @@ export default function Dashboard() {
               <div className="rounded-xl bg-emerald-50 p-2.5">
                 <UserCircle2 className="h-5 w-5 text-emerald-600" />
               </div>
-              <ArrowRight className="h-4 w-4 text-slate-400" />
+              <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
             </div>
-            <div className="text-3xl font-bold text-slate-900">{stats.profileCompletion}%</div>
+            <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">{stats.profileCompletion}%</div>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Profile Completion</p>
           </div>
         </section>

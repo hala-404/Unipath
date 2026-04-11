@@ -160,7 +160,7 @@ export default function UniversityDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
+      <div className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         Loading university details...
       </div>
     );
@@ -168,18 +168,18 @@ export default function UniversityDetails() {
 
   if (!university) {
     return (
-      <div className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
+      <div className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
         <button
           onClick={() => navigate("/recommendations")}
-          className="mb-6 inline-flex items-center gap-2 text-slate-600 hover:text-slate-900"
+          className="mb-6 inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
         >
           <ArrowLeft className="h-5 w-5" />
           Back to Recommendations
         </button>
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm">
-          <h1 className="text-2xl font-bold text-slate-900">No university selected</h1>
-          <p className="mt-2 text-slate-600">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 md:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">No university selected</h1>
+          <p className="mt-2 text-slate-600 dark:text-slate-400">
             Please go back and open a university from the recommendations page.
           </p>
         </div>
@@ -199,17 +199,17 @@ export default function UniversityDetails() {
   const risk = university.risk || "Match";
 
   return (
-    <div className="min-h-screen bg-slate-50 px-6 py-8 text-slate-900 md:px-10">
+    <div className="min-h-screen bg-slate-50 px-6 py-8 text-slate-900 dark:bg-slate-950 dark:text-slate-100 md:px-10">
       <div className="mx-auto max-w-[1300px]">
         <button
           onClick={() => navigate("/recommendations")}
-          className="mb-8 inline-flex items-center gap-3 text-sm md:text-base text-slate-600 transition hover:text-slate-900"
+          className="mb-8 inline-flex items-center gap-3 text-sm md:text-base text-slate-600 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
         >
           <ArrowLeft className="h-5 w-5" />
           Back to Recommendations
         </button>
 
-        <div className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
+        <div className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="relative min-h-[320px] md:min-h-[380px]">
             <div
               className="absolute inset-0 scale-110 bg-cover bg-center blur-2xl"
@@ -235,7 +235,7 @@ export default function UniversityDetails() {
                 <div>
                   <div className="mb-4 flex flex-wrap gap-3">
                     {university.world_ranking != null && (
-                      <div className="inline-flex items-center gap-2 rounded-2xl bg-white/90 px-4 py-2 text-sm md:text-base font-semibold text-slate-900 backdrop-blur">
+                      <div className="inline-flex items-center gap-2 rounded-2xl bg-white/90 px-4 py-2 text-sm md:text-base font-semibold text-slate-900 backdrop-blur dark:bg-slate-950/80 dark:text-slate-100">
                         <Trophy className="h-5 w-5" />
                         #{university.world_ranking} World Ranking
                       </div>
@@ -278,73 +278,73 @@ export default function UniversityDetails() {
 
         <div className="mt-10 grid gap-8 xl:grid-cols-[1.9fr_0.9fr]">
           <div className="space-y-8">
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm">
+            <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mb-6 flex items-center gap-3">
                 <GraduationCap className="h-7 w-7 text-emerald-600" />
-                <h2 className="text-xl md:text-2xl font-semibold text-slate-900">
+                <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-slate-100">
                   Program Details
                 </h2>
               </div>
 
               <div className="grid gap-5 md:grid-cols-2">
-                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6">
-                  <div className="mb-2 flex items-center gap-3 text-slate-500">
+                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6 dark:bg-slate-800">
+                  <div className="mb-2 flex items-center gap-3 text-slate-500 dark:text-slate-400">
                     <GraduationCap className="h-5 w-5 text-emerald-600" />
                     <span className="text-sm md:text-base">Program</span>
                   </div>
-                  <p className="text-lg md:text-xl font-semibold text-slate-900">
+                  <p className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100">
                     {university.program || "N/A"}
                   </p>
                 </div>
 
-                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6">
-                  <div className="mb-2 flex items-center gap-3 text-slate-500">
+                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6 dark:bg-slate-800">
+                  <div className="mb-2 flex items-center gap-3 text-slate-500 dark:text-slate-400">
                     <Globe className="h-5 w-5 text-emerald-600" />
                     <span className="text-sm md:text-base">Language</span>
                   </div>
-                  <p className="text-lg md:text-xl font-semibold text-slate-900">
+                  <p className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100">
                     {university.language || "N/A"}
                   </p>
                 </div>
 
-                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6">
-                  <div className="mb-2 flex items-center gap-3 text-slate-500">
+                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6 dark:bg-slate-800">
+                  <div className="mb-2 flex items-center gap-3 text-slate-500 dark:text-slate-400">
                     <DollarSign className="h-5 w-5 text-emerald-600" />
                     <span className="text-sm md:text-base">Tuition (per year)</span>
                   </div>
-                  <p className="text-lg md:text-xl font-semibold text-slate-900">
+                  <p className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100">
                     {formatTuition(university)}
                   </p>
                 </div>
 
-                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6">
-                  <div className="mb-2 flex items-center gap-3 text-slate-500">
+                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6 dark:bg-slate-800">
+                  <div className="mb-2 flex items-center gap-3 text-slate-500 dark:text-slate-400">
                     <Trophy className="h-5 w-5 text-emerald-600" />
                     <span className="text-sm md:text-base">Minimum GPA</span>
                   </div>
-                  <p className="text-lg md:text-xl font-semibold text-slate-900">
+                  <p className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100">
                     {university.min_gpa ?? "N/A"}
                   </p>
                 </div>
 
-                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6">
-                  <div className="mb-2 flex items-center gap-3 text-slate-500">
+                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6 dark:bg-slate-800">
+                  <div className="mb-2 flex items-center gap-3 text-slate-500 dark:text-slate-400">
                     <Users className="h-5 w-5 text-emerald-600" />
                     <span className="text-sm md:text-base">Acceptance Rate</span>
                   </div>
-                  <p className="text-lg md:text-xl font-semibold text-slate-900">
+                  <p className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100">
                     {university.acceptance_rate != null
                       ? `${university.acceptance_rate}%`
                       : "N/A"}
                   </p>
                 </div>
 
-                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6">
-                  <div className="mb-2 flex items-center gap-3 text-slate-500">
+                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6 dark:bg-slate-800">
+                  <div className="mb-2 flex items-center gap-3 text-slate-500 dark:text-slate-400">
                     <Trophy className="h-5 w-5 text-emerald-600" />
                     <span className="text-sm md:text-base">World Ranking</span>
                   </div>
-                  <p className="text-lg md:text-xl font-semibold text-slate-900">
+                  <p className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100">
                     {university.world_ranking != null
                       ? `#${university.world_ranking}`
                       : "N/A"}
@@ -353,25 +353,25 @@ export default function UniversityDetails() {
               </div>
             </section>
 
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm">
+            <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mb-3 flex items-center gap-3">
                 <CheckCircle2 className="h-7 w-7 text-emerald-600" />
-                <h2 className="text-xl md:text-2xl font-semibold text-slate-900">
+                <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-slate-100">
                   Why This Matches You
                 </h2>
               </div>
 
-              <p className="mb-8 text-base md:text-lg text-slate-500">
+              <p className="mb-8 text-base md:text-lg text-slate-500 dark:text-slate-400">
                 Our AI analyzed your profile and found these key alignment points
               </p>
 
               <ul className="space-y-6">
                 {reasons.map((reason, index) => (
                   <li key={index} className="flex items-start gap-4">
-                    <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-50">
+                    <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/20">
                       <CheckCircle2 className="h-6 w-6 text-emerald-600" />
                     </div>
-                    <span className="text-base md:text-lg leading-relaxed text-slate-700">
+                    <span className="text-base md:text-lg leading-relaxed text-slate-700 dark:text-slate-300">
                       {reason}
                     </span>
                   </li>
@@ -379,15 +379,15 @@ export default function UniversityDetails() {
               </ul>
             </section>
 
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm">
+            <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mb-3 flex items-center gap-3">
                 <FileText className="h-7 w-7 text-emerald-600" />
-                <h2 className="text-xl md:text-2xl font-semibold text-slate-900">
+                <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-slate-100">
                   Required Documents
                 </h2>
               </div>
 
-              <p className="mb-8 text-base md:text-lg text-slate-500">
+              <p className="mb-8 text-base md:text-lg text-slate-500 dark:text-slate-400">
                 Checklist of documents needed for your application
               </p>
 
@@ -395,10 +395,10 @@ export default function UniversityDetails() {
                 {documents.map((doc, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-4 rounded-[20px] bg-slate-50 px-5 py-5"
+                    className="flex items-center gap-4 rounded-[20px] bg-slate-50 px-5 py-5 dark:bg-slate-800"
                   >
-                    <FileText className="h-6 w-6 text-slate-400" />
-                    <span className="text-base md:text-lg text-slate-700">{doc}</span>
+                    <FileText className="h-6 w-6 text-slate-400 dark:text-slate-500" />
+                    <span className="text-base md:text-lg text-slate-700 dark:text-slate-300">{doc}</span>
                   </div>
                 ))}
               </div>
@@ -406,8 +406,8 @@ export default function UniversityDetails() {
           </div>
 
           <aside className="space-y-8">
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm">
-              <h2 className="mb-8 text-xl md:text-2xl font-semibold text-slate-900">
+            <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h2 className="mb-8 text-xl md:text-2xl font-semibold text-slate-900 dark:text-slate-100">
                 Actions
               </h2>
 
@@ -434,7 +434,7 @@ export default function UniversityDetails() {
 
                 <button
                   type="button"
-                  className="flex w-full items-center justify-center gap-3 rounded-[18px] border border-slate-200 bg-white px-5 py-4 text-sm md:text-base font-medium text-slate-700 transition hover:bg-slate-50"
+                  className="flex w-full items-center justify-center gap-3 rounded-[18px] border border-slate-200 bg-white px-5 py-4 text-sm md:text-base font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   <CirclePlus className="h-5 w-5" />
                   Add to Tracker
@@ -442,7 +442,7 @@ export default function UniversityDetails() {
 
                 <button
                   type="button"
-                  className="flex w-full items-center justify-center gap-3 rounded-[18px] border border-slate-200 bg-white px-5 py-4 text-sm md:text-base font-medium text-slate-700 transition hover:bg-slate-50"
+                  className="flex w-full items-center justify-center gap-3 rounded-[18px] border border-slate-200 bg-white px-5 py-4 text-sm md:text-base font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   <MessageCircle className="h-5 w-5" />
                   Ask AI About This University
@@ -450,10 +450,10 @@ export default function UniversityDetails() {
               </div>
             </section>
 
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm">
+            <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mb-6 flex items-center gap-3">
                 <ShieldCheck className="h-7 w-7 text-emerald-600" />
-                <h2 className="text-xl md:text-2xl font-semibold text-slate-900">
+                <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-slate-100">
                   Risk Assessment
                 </h2>
               </div>
@@ -466,7 +466,7 @@ export default function UniversityDetails() {
                 {risk}
               </div>
 
-              <p className="mt-6 text-base md:text-lg leading-relaxed text-slate-600">
+              <p className="mt-6 text-base md:text-lg leading-relaxed text-slate-600 dark:text-slate-400">
                 {risk === "Safe"
                   ? "Your profile is stronger than the minimum requirement. This is a relatively safer option."
                   : risk === "Reach"
@@ -475,45 +475,45 @@ export default function UniversityDetails() {
               </p>
             </section>
 
-            <section className="rounded-[28px] border border-emerald-200 bg-emerald-50 p-5 md:p-6 shadow-sm">
+            <section className="rounded-[28px] border border-emerald-200 bg-emerald-50 p-5 md:p-6 shadow-sm dark:border-emerald-900/50 dark:bg-emerald-950/20">
               <div className="mb-6 flex items-center gap-3">
                 <CalendarClock className="h-7 w-7 text-emerald-600" />
-                <h2 className="text-xl md:text-2xl font-semibold text-slate-900">
+                <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-slate-100">
                   Application Deadline
                 </h2>
               </div>
 
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-emerald-700">
+                <div className="text-3xl md:text-4xl font-bold text-emerald-700 dark:text-emerald-300">
                   {remainingDays != null ? remainingDays : "—"}
                 </div>
-                <div className="mt-3 text-sm md:text-base text-slate-500">days remaining</div>
-                <div className="mt-6 text-base md:text-lg text-slate-700">
+                <div className="mt-3 text-sm md:text-base text-slate-500 dark:text-slate-400">days remaining</div>
+                <div className="mt-6 text-base md:text-lg text-slate-700 dark:text-slate-300">
                   {formatDeadline(university.deadline)}
                 </div>
               </div>
             </section>
 
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm">
+            <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mb-4 flex items-center gap-3">
                 <Clock3 className="h-7 w-7 text-emerald-600" />
-                <h2 className="text-xl md:text-2xl font-semibold text-slate-900">
+                <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-slate-100">
                   Quick Overview
                 </h2>
               </div>
 
-              <div className="space-y-4 text-base md:text-lg text-slate-700">
-                <div className="flex items-center justify-between rounded-[18px] bg-slate-50 px-5 py-4">
+              <div className="space-y-4 text-base md:text-lg text-slate-700 dark:text-slate-300">
+                <div className="flex items-center justify-between rounded-[18px] bg-slate-50 px-5 py-4 dark:bg-slate-800">
                   <span>Fit Score</span>
-                  <span className="font-semibold text-emerald-700">{fitScore}%</span>
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-300">{fitScore}%</span>
                 </div>
 
-                <div className="flex items-center justify-between rounded-[18px] bg-slate-50 px-5 py-4">
+                <div className="flex items-center justify-between rounded-[18px] bg-slate-50 px-5 py-4 dark:bg-slate-800">
                   <span>Language</span>
                   <span className="font-semibold">{university.language || "N/A"}</span>
                 </div>
 
-                <div className="flex items-center justify-between rounded-[18px] bg-slate-50 px-5 py-4">
+                <div className="flex items-center justify-between rounded-[18px] bg-slate-50 px-5 py-4 dark:bg-slate-800">
                   <span>Minimum GPA</span>
                   <span className="font-semibold">{university.min_gpa ?? "N/A"}</span>
                 </div>

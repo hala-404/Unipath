@@ -176,9 +176,9 @@ function UniversityCard({
   }
 
   return (
-    <div className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
       {/* IMAGE */}
-      <div className="relative h-64 w-full overflow-hidden bg-slate-100">
+      <div className="relative h-64 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
         <img
           src={imageUrl}
           alt={university.name}
@@ -193,7 +193,7 @@ function UniversityCard({
         <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-transparent" />
 
         {university.world_ranking != null && (
-          <div className="absolute left-4 top-4 rounded-2xl bg-white/95 px-4 py-2 text-base font-semibold text-slate-900 shadow-sm">
+          <div className="absolute left-4 top-4 rounded-2xl bg-white/95 px-4 py-2 text-base font-semibold text-slate-900 shadow-sm dark:bg-slate-950/90 dark:text-slate-100">
             #{university.world_ranking} World
           </div>
         )}
@@ -206,7 +206,7 @@ function UniversityCard({
           <h3 className="line-clamp-2 text-2xl font-bold tracking-tight text-white drop-shadow-sm">
             {university.name}
           </h3>
-          <p className="mt-1 flex items-center gap-2 text-sm text-slate-200">
+          <p className="mt-1 flex items-center gap-2 text-sm text-slate-200 dark:text-slate-300">
             <MapPin className="h-4 w-4" />
             {university.city}, {university.country}
           </p>
@@ -215,7 +215,7 @@ function UniversityCard({
 
       {/* CONTENT */}
       <div className="px-6 pb-6 pt-7">
-        <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 text-slate-700">
+        <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 text-slate-700 dark:text-slate-300">
           <p className="text-sm">
             <span className="font-semibold">Program:</span> {university.program || "N/A"}
           </p>
@@ -242,24 +242,24 @@ function UniversityCard({
             {risk}
           </span>
 
-          <span className="text-sm text-slate-600">
+          <span className="text-sm text-slate-600 dark:text-slate-400">
             Min GPA: {university.min_gpa ?? "N/A"}
           </span>
         </div>
 
         {/* WHY THIS MATCHES */}
-        <div className="mt-6 rounded-[24px] bg-slate-50 p-6">
-          <h4 className="mb-3 text-sm font-semibold text-slate-700">
+        <div className="mt-6 rounded-[24px] bg-slate-50 p-6 dark:bg-slate-800">
+          <h4 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
             Why this matches you
           </h4>
 
           <ul className="space-y-3">
             {(university.reasons || []).slice(0, 3).map((reason, index) => (
               <li key={index} className="flex items-start gap-4">
-                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-emerald-600 text-emerald-600">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-emerald-600 text-emerald-600 dark:border-emerald-400 dark:text-emerald-400">
                   ✓
                 </div>
-                <span className="text-sm leading-relaxed text-slate-700">
+                <span className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
                   {reason}
                 </span>
               </li>
@@ -279,23 +279,23 @@ function UniversityCard({
           <div className="relative">
             <button
               onClick={() => setShowMenu((prev) => !prev)}
-              className="flex h-10 w-10 items-center justify-center rounded-[22px] border border-slate-300 bg-white text-xl text-slate-900 shadow-sm hover:bg-slate-50"
+              className="flex h-10 w-10 items-center justify-center rounded-[22px] border border-slate-300 bg-white text-xl text-slate-900 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
             >
               +
             </button>
 
             {showMenu && (
-              <div className="absolute bottom-[calc(100%+12px)] right-0 z-30 w-60 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+              <div className="absolute bottom-[calc(100%+12px)] right-0 z-30 w-60 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-slate-900">
                 <button
                   onClick={handleAddToTracker}
-                  className="block w-full rounded-xl px-4 py-3 text-left text-base font-medium text-slate-700 hover:bg-slate-100"
+                  className="block w-full rounded-xl px-4 py-3 text-left text-base font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   Add to Tracker
                 </button>
 
                 <button
                   onClick={handleAddToCompare}
-                  className="block w-full rounded-xl px-4 py-3 text-left text-base font-medium text-slate-700 hover:bg-slate-100"
+                  className="block w-full rounded-xl px-4 py-3 text-left text-base font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   {compared ? "Already in Compare" : "Add to Compare"}
                 </button>
@@ -304,29 +304,29 @@ function UniversityCard({
           </div>
         </div>
 
-        <div className="mt-6 border-t border-slate-200 pt-5">
+        <div className="mt-6 border-t border-slate-200 pt-5 dark:border-slate-800">
           <button
             type="button"
             onClick={() => setShowScoreDetails((prev) => !prev)}
             className="flex w-full items-center justify-between text-left"
           >
             <div className="flex items-center gap-3">
-              <Brain className="h-6 w-6 text-slate-500" />
-              <span className="text-sm font-semibold text-slate-700">
+              <Brain className="h-6 w-6 text-slate-500 dark:text-slate-400" />
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                 Why this score?
               </span>
             </div>
 
             <ChevronDown
-              className={`h-6 w-6 text-slate-500 transition-transform ${
+              className={`h-6 w-6 text-slate-500 transition-transform dark:text-slate-400 ${
                 showScoreDetails ? "rotate-180" : ""
               }`}
             />
           </button>
 
           {showScoreDetails && (
-            <div className="mt-4 rounded-[22px] bg-slate-50 p-5">
-              <p className="mb-3 text-sm text-slate-500">
+            <div className="mt-4 rounded-[22px] bg-slate-50 p-5 dark:bg-slate-800">
+              <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">
                 {matchedCriteria != null && totalCriteria != null
                   ? `This university matched ${matchedCriteria} out of ${totalCriteria} scored preference criteria.`
                   : "This score is based on how well the university matches your saved profile preferences."}
@@ -334,7 +334,7 @@ function UniversityCard({
 
               <ul className="space-y-3">
                 {scoreBreakdown.map((item, index) => (
-                  <li key={index} className="text-sm leading-relaxed text-slate-700">
+                  <li key={index} className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
                     • {item}
                   </li>
                 ))}
@@ -404,38 +404,38 @@ export default function Recommendations() {
   const missingPreferenceMessage = getMissingPreferenceMessage(profileSummary);
 
   if (loading) {
-    return <div className="min-h-screen bg-slate-50 p-8 text-slate-700">Loading recommendations...</div>;
+    return <div className="min-h-screen bg-slate-50 p-8 text-slate-700 dark:bg-slate-950 dark:text-slate-400">Loading recommendations...</div>;
   }
 
   if (errorMessage) {
-    return <div className="min-h-screen bg-slate-50 p-8 text-red-600">{errorMessage}</div>;
+    return <div className="min-h-screen bg-slate-50 p-8 text-red-600 dark:bg-slate-950 dark:text-red-400">{errorMessage}</div>;
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-8 md:px-8">
+    <div className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900 dark:bg-slate-950 dark:text-slate-100 md:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-10">
           <div className="flex items-center gap-3">
             <Sparkles className="h-6 w-6 text-emerald-600" />
-            <h1 className="text-3xl font-bold text-slate-900">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
               {isExploreMode ? "Explore Universities" : "AI Recommendations"}
             </h1>
           </div>
 
-          <p className="mt-2 max-w-3xl text-slate-600">
+          <p className="mt-2 max-w-3xl text-slate-600 dark:text-slate-400">
             {isExploreMode
               ? "Explore the universities"
               : "Based on your saved profile, UniPath found universities that best match your academic eligibility and personal preferences."}
           </p>
         </div>
 
-        <div className="mb-8 rounded-3xl border border-emerald-200 bg-white p-6 shadow-sm">
+        <div className="mb-8 rounded-3xl border border-emerald-200 bg-white p-6 shadow-sm dark:border-emerald-900/50 dark:bg-slate-900">
           <div className="flex items-center gap-3">
             <BrainCircuit className="h-5 w-5 text-emerald-600" />
-            <h2 className="text-lg font-semibold text-slate-900">Your Profile Summary</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Your Profile Summary</h2>
           </div>
 
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             These fields are used to score and rank your recommendation results.
           </p>
 
@@ -443,8 +443,8 @@ export default function Recommendations() {
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-emerald-50 p-2 text-emerald-600">↗</div>
               <div>
-                <p className="text-sm text-slate-500">GPA</p>
-                <p className="font-semibold text-slate-900">
+                <p className="text-sm text-slate-500 dark:text-slate-400">GPA</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
                   {profileSummary.gpa ?? "Not set"}
                 </p>
               </div>
@@ -455,8 +455,8 @@ export default function Recommendations() {
                 <GraduationCap className="h-4 w-4 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Program</p>
-                <p className="font-semibold text-slate-900">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Program</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
                   {profileSummary.preferred_program || "Any"}
                 </p>
               </div>
@@ -467,8 +467,8 @@ export default function Recommendations() {
                 <Globe className="h-4 w-4 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Language</p>
-                <p className="font-semibold text-slate-900">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Language</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
                   {profileSummary.preferred_language || "Any"}
                 </p>
               </div>
@@ -479,8 +479,8 @@ export default function Recommendations() {
                 <MapPin className="h-4 w-4 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Location</p>
-                <p className="font-semibold text-slate-900">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Location</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
                   {getLocationLabel(profileSummary)}
                 </p>
               </div>
@@ -491,8 +491,8 @@ export default function Recommendations() {
                 <DollarSign className="h-4 w-4 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">Max Tuition</p>
-                <p className="font-semibold text-slate-900">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Max Tuition</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
                   {formatBudget(profileSummary.max_tuition)}
                 </p>
               </div>
@@ -500,43 +500,43 @@ export default function Recommendations() {
           </div>
         </div>
 
-        <div className="mb-10 flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-10 flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-slate-500">Active filters:</span>
+            <span className="text-slate-500 dark:text-slate-400">Active filters:</span>
             {filterPills.length > 0 ? (
               filterPills.map((pill) => (
                 <span
                   key={pill}
-                  className="rounded-full bg-slate-100 px-3 py-1 text-slate-700"
+                  className="rounded-full bg-slate-100 px-3 py-1 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                 >
                   {pill}
                 </span>
               ))
             ) : (
-              <span className="text-slate-400">No saved filters yet</span>
+              <span className="text-slate-400 dark:text-slate-500">No saved filters yet</span>
             )}
           </div>
-          <div className="text-sm text-slate-500">Compare selected: {compareCount}/3</div>
+          <div className="text-sm text-slate-500 dark:text-slate-400">Compare selected: {compareCount}/3</div>
         </div>
 
         {missingPreferenceMessage ? (
-          <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300">
             {missingPreferenceMessage}
           </div>
         ) : null}
 
         <section className="mb-12">
-          <h2 className="mb-2 text-2xl font-bold text-slate-900">
+          <h2 className="mb-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
             {isExploreMode ? "Explore" : "Exact Matches"}
           </h2>
-          <p className="mb-5 text-slate-600">
+          <p className="mb-5 text-slate-600 dark:text-slate-400">
             {isExploreMode
               ? "Explore the universities"
               : "Universities with the strongest alignment to your saved profile."}
           </p>
 
           {exactMatches.length === 0 ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
               No exact matches found for your current preferences.
             </div>
           ) : (
@@ -558,15 +558,15 @@ export default function Recommendations() {
 
         {!isExploreMode && (
           <section>
-            <h2 className="mb-2 text-2xl font-bold text-slate-900">
+            <h2 className="mb-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
               Other Recommended Options
             </h2>
-            <p className="mb-5 text-slate-600">
+            <p className="mb-5 text-slate-600 dark:text-slate-400">
               Alternative universities that still match your program and language but not your location preference.
             </p>
 
             {alternativeRecommendations.length === 0 ? (
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
+              <div className="rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
                 No alternative recommendations available.
               </div>
             ) : (

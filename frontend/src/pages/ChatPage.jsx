@@ -249,7 +249,7 @@ export default function ChatPage() {
                     <div
                       className={`max-w-[85%] rounded-[24px] px-5 py-4 shadow-sm ${
                         isAssistant
-                          ? "bg-slate-100 text-slate-800"
+                          ? "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-100"
                           : "bg-emerald-600 text-white"
                       }`}
                     >
@@ -258,7 +258,7 @@ export default function ChatPage() {
                       </p>
                       <p
                         className={`mt-3 text-xs ${
-                          isAssistant ? "text-slate-500" : "text-emerald-50"
+                          isAssistant ? "text-slate-500 dark:text-slate-400" : "text-emerald-50"
                         }`}
                       >
                         {msg.time}
@@ -274,7 +274,7 @@ export default function ChatPage() {
                     <Bot className="h-5 w-5" />
                   </div>
 
-                  <div className="max-w-[85%] rounded-[24px] bg-slate-100 px-5 py-4 text-slate-600 shadow-sm">
+                  <div className="max-w-[85%] rounded-[24px] bg-slate-100 px-5 py-4 text-slate-600 shadow-sm dark:bg-slate-900 dark:text-slate-400">
                     Thinking...
                   </div>
                 </div>
@@ -285,9 +285,9 @@ export default function ChatPage() {
           </div>
         </main>
 
-        <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 px-4 py-5 backdrop-blur md:px-8">
+        <div className="sticky bottom-0 border-t border-slate-200 bg-white/95 px-4 py-5 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:px-8">
           <div className="mx-auto max-w-5xl">
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-3 shadow-sm">
+            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="flex items-center gap-3">
                 <input
                   type="text"
@@ -295,7 +295,7 @@ export default function ChatPage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="flex-1 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-base text-slate-900 outline-none placeholder:text-slate-400 focus:border-emerald-500"
+                  className="flex-1 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-base text-slate-900 outline-none placeholder:text-slate-400 focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
                 />
 
                 <button

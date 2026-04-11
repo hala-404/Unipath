@@ -60,9 +60,9 @@ export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <aside className="fixed left-0 top-0 flex h-screen w-64 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+    <aside className="fixed left-0 top-0 h-screen w-[280px] border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
       <div className="border-b border-slate-200 px-6 py-6 dark:border-slate-800">
-        <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">UniPath</div>
+        <div className="text-3xl font-bold text-emerald-500">UniPath</div>
       </div>
 
       <div className="flex-1 px-4 py-4">
@@ -81,7 +81,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      <div className="border-t border-slate-200 px-4 py-4 dark:border-slate-800">
+      <div className="border-t border-slate-200 dark:border-slate-800 px-4 py-4">
         <Show when="signed-out">
           <div className="space-y-3">
             <SignInButton mode="modal">
@@ -104,17 +104,8 @@ export default function Navbar() {
               onClick={toggleTheme}
               className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-base font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
             >
-              {theme === "light" ? (
-                <>
-                  <Moon className="h-5 w-5" />
-                  Dark Mode
-                </>
-              ) : (
-                <>
-                  <Sun className="h-5 w-5" />
-                  Light Mode
-                </>
-              )}
+              {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              {theme === "light" ? "Dark Mode" : "Light Mode"}
             </button>
 
             <div className="flex items-center gap-3 rounded-2xl px-3 py-2 dark:text-slate-300">

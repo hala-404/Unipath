@@ -35,7 +35,7 @@ export default function App() {
     <div className="flex min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <Navbar />
 
-      <main className="ml-64 flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950">
+      <main className="ml-[280px] flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950">
         <Routes>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
