@@ -250,6 +250,14 @@ npm test
 Current coverage is limited to smoke tests for the health endpoint and the universities endpoint.
 Current coverage also includes chat helper logic, chat prompt construction, and duplicate tracker protection.
 
+## Testing & Quality
+
+- Backend tests implemented with Jest
+- Unit tests for chat helpers and prompt logic
+- Endpoint tests for core APIs
+- Coverage reporting enabled
+- CI pipeline runs tests and builds frontend
+
 ---
 
 ## How the AI Advisor Works

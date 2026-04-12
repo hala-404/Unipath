@@ -20,7 +20,7 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "test": "NODE_ENV=test jest --runInBand",
+    "test": "NODE_ENV=test jest --runInBand --coverage",
     "populate:images": "node scripts/populateUniversityImages.js",
     "cloudinary:get-images": "node scripts/getImages.js"
   },
@@ -34,6 +34,11 @@
   "author": "Hala Serbouti",
   "license": "ISC",
   "type": "commonjs",
+  "jest": {
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.js"
+    ]
+  },
   "devDependencies": {
     "jest": "^30.3.0",
     "nodemon": "^3.1.14",

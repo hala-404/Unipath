@@ -28,8 +28,17 @@ jobs:
       - name: Install backend dependencies
         run: npm ci
 
-      - name: Run backend tests
+      - name: Run backend tests with coverage
         run: npm test
+
+      - name: Show coverage summary
+        run: cat coverage/lcov-report/index.html || echo "Coverage generated"
+
+      - name: Upload backend coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage
 
   frontend-build:
     runs-on: ubuntu-latest

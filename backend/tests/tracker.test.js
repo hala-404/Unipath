@@ -51,7 +51,10 @@ describe("tracker controller", () => {
         rows: [{ name: "Test University" }],
       });
 
-    const req = { body: { university_id: 11, status: "Not Started" } };
+    const req = {
+      auth: { userId: "user_test_1" },
+      body: { university_id: 11, status: "Not Started" },
+    };
     const res = createMockRes();
 
     await createApplication(req, res);
@@ -77,14 +80,20 @@ describe("tracker controller", () => {
         Object.assign(new Error("duplicate key"), { code: "23505" })
       );
 
-    const firstReq = { body: { university_id: 11, status: "Not Started" } };
+    const firstReq = {
+      auth: { userId: "user_test_1" },
+      body: { university_id: 11, status: "Not Started" },
+    };
     const firstRes = createMockRes();
 
     await createApplication(firstReq, firstRes);
 
     expect(firstRes.status).toHaveBeenCalledWith(201);
 
-    const secondReq = { body: { university_id: 11, status: "Not Started" } };
+    const secondReq = {
+      auth: { userId: "user_test_1" },
+      body: { university_id: 11, status: "Not Started" },
+    };
     const secondRes = createMockRes();
 
     await createApplication(secondReq, secondRes);
@@ -115,7 +124,7 @@ describe("tracker controller", () => {
       ],
     });
 
-    const req = {};
+    const req = { auth: { userId: "user_test_2" } };
     const res = createMockRes();
 
     await listApplications(req, res);
