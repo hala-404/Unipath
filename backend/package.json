@@ -15,7 +15,7 @@
   },
   "name": "unipath-backend",
   "version": "1.0.0",
-  "description": "Backend API for UniPath - AI-based university application support system",
+  "description": "Backend API for UniPath university application support system",
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
@@ -24,7 +24,7 @@
     "populate:images": "node scripts/populateUniversityImages.js",
     "cloudinary:get-images": "node scripts/getImages.js"
   },
-  "keywords": ["university", "application", "ai", "recommendation", "tracker"],
+  "keywords": ["university", "application", "tracker", "ai", "recommendation"],
   "author": "Hala Serbouti",
   "license": "ISC",
   "type": "commonjs",
