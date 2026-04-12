@@ -12,7 +12,10 @@ jest.mock("../utils/logActivity", () => ({
 
 const pool = require("../db/pool");
 const { ensureLocalUser } = require("../utils/ensureLocalUser");
-const { createApplication } = require("../controllers/tracker.controller");
+const {
+  createApplication,
+  listApplications,
+} = require("../controllers/tracker.controller");
 
 function createMockRes() {
   return {
@@ -59,5 +62,67 @@ describe("tracker controller", () => {
     expect(secondRes.json).toHaveBeenCalledWith({
       error: "University already added to tracker",
     });
+  });
+
+  test("keeps tracker data isolated by user", async () => {
+    ensureLocalUser
+      .mockResolvedValueOnce({ id: 1 })
+      .mockResolvedValueOnce({ id: 2 });
+
+    pool.query
+      .mockResolvedValueOnce({
+        rows: [{ id: 10, user_id: 1, university_id: 99, status: "Not Started" }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{ name: "User A University" }],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            application_id: 22,
+            status: "In Progress",
+            user_id: 2,
+            checklist: [],
+            university_id: 55,
+            name: "User B University",
+            city: "Shanghai",
+            country: "China",
+            program: "Data Science",
+            deadline: "2026-06-01",
+          },
+        ],
+      });
+
+    const addReq = { body: { university_id: 99, status: "Not Started" } };
+    const addRes = createMockRes();
+
+    await createApplication(addReq, addRes);
+
+    expect(addRes.status).toHaveBeenCalledWith(201);
+
+    const listReq = {};
+    const listRes = createMockRes();
+
+    await listApplications(listReq, listRes);
+
+    expect(pool.query).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining("WHERE a.user_id = $1"),
+      [2]
+    );
+    expect(listRes.json).toHaveBeenCalledWith([
+      {
+        application_id: 22,
+        status: "In Progress",
+        user_id: 2,
+        checklist: [],
+        university_id: 55,
+        name: "User B University",
+        city: "Shanghai",
+        country: "China",
+        program: "Data Science",
+        deadline: "2026-06-01",
+      },
+    ]);
   });
 });
