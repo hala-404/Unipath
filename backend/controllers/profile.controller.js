@@ -4,9 +4,10 @@ const { logActivity } = require("../utils/logActivity");
 const { z } = require("zod");
 
 const profileSchema = z.object({
-  gpa: z.number().optional(),
-  preferred_city: z.string().optional(),
-  preferred_program: z.string().optional(),
+  gpa: z.number().min(0).max(4).optional(),
+  preferred_city: z.string().max(100).optional(),
+  preferred_program: z.string().max(100).optional(),
+  preferred_language: z.string().max(50).optional(),
 }).passthrough();
 
 async function getProfile(req, res) {
@@ -38,7 +39,10 @@ async function updateProfile(req, res) {
     const parsed = profileSchema.safeParse(req.body);
 
     if (!parsed.success) {
-      return res.status(400).json({ error: "Invalid profile data" });
+      return res.status(400).json({
+        error: "Invalid profile input",
+        details: parsed.error.flatten(),
+      });
     }
 
     const {

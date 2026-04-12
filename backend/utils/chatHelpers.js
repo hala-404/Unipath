@@ -10,24 +10,62 @@ function normalizeText(text = "") {
   return text.toLowerCase().trim();
 }
 
+function normalizeForMatching(text = "") {
+  return normalizeText(text)
+    .replace(/[^a-z0-9\s+]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function containsWholePhrase(text, phrase) {
+  const normalizedText = normalizeForMatching(text);
+  const normalizedPhrase = normalizeForMatching(phrase);
+
+  if (!normalizedText || !normalizedPhrase) {
+    return false;
+  }
+
+  const pattern = new RegExp(`\\b${escapeRegExp(normalizedPhrase)}\\b`);
+  return pattern.test(normalizedText);
+}
+
 function messageHasAny(message, keywords) {
-  const lower = normalizeText(message);
-  return keywords.some((word) => lower.includes(word));
+  return keywords.some((word) => containsWholePhrase(message, word));
 }
 
 function wantsAlternatives(message) {
-  const lower = normalizeText(message);
+  const lower = normalizeForMatching(message);
   const alternativeKeywords = [
-    "another", "other", "different", "else", "alternative",
-    "more options", "what else", "something else", "besides",
-    "instead", "not that", "give me more", "any other"
+    "another",
+    "other",
+    "different",
+    "else",
+    "alternative",
+    "more options",
+    "what else",
+    "something else",
+    "besides",
+    "instead",
+    "not that",
+    "give me more",
+    "any other",
   ];
-  return alternativeKeywords.some((kw) => lower.includes(kw));
+  const negationPattern = /\b(?:do not|don't|dont|no|not)\b.*\b(?:another|other|different|else|alternative|more options|what else|something else|besides|instead|give me more|any other)\b/;
+
+  if (negationPattern.test(lower)) {
+    return false;
+  }
+
+  return alternativeKeywords.some((kw) => containsWholePhrase(lower, kw));
 }
 
 function extractMentionedMajors(history, availableMajors = []) {
   if (typeof history === "string") {
-    const text = history.toLowerCase();
+    const text = normalizeForMatching(history);
     const fallbackMajors = [
       "computer science",
       "data science",
@@ -40,20 +78,20 @@ function extractMentionedMajors(history, availableMajors = []) {
       "psychology",
       "design",
       "biology",
+      "artificial intelligence",
       "ai",
     ];
 
-    return fallbackMajors.filter((major) => text.includes(major));
+    return fallbackMajors.filter((major) => containsWholePhrase(text, major));
   }
 
   const mentioned = new Set();
   const allText = history
     .map((msg) => msg.content || "")
-    .join(" ")
-    .toLowerCase();
+    .join(" ");
 
   availableMajors.forEach((major) => {
-    if (allText.includes(major.toLowerCase())) {
+    if (containsWholePhrase(allText, major)) {
       mentioned.add(major);
     }
   });
@@ -65,8 +103,7 @@ function extractInterestsFromHistory(history) {
   const allText = history
     .filter((msg) => msg.role === "user")
     .map((msg) => msg.content || "")
-    .join(" ")
-    .toLowerCase();
+    .join(" ");
 
   const interests = [];
 
@@ -98,7 +135,7 @@ function extractInterestsFromHistory(history) {
 function scoreMajorsFromMessage(message, availableMajors, history = [], excludeMajors = []) {
   const majorScores = {};
   availableMajors.forEach((major) => {
-    if (excludeMajors.some((ex) => normalizeText(ex) === normalizeText(major))) {
+    if (excludeMajors.some((ex) => normalizeForMatching(ex) === normalizeForMatching(major))) {
       majorScores[major] = -100;
     } else {
       majorScores[major] = 0;
@@ -107,7 +144,7 @@ function scoreMajorsFromMessage(message, availableMajors, history = [], excludeM
 
   const boostIfExists = (majorName, points) => {
     const found = availableMajors.find(
-      (m) => normalizeText(m) === normalizeText(majorName)
+      (m) => normalizeForMatching(m) === normalizeForMatching(majorName)
     );
     if (found && majorScores[found] >= 0) {
       majorScores[found] += points;
@@ -208,6 +245,7 @@ function formatResponse(text) {
 module.exports = {
   safeJsonParse,
   normalizeText,
+  normalizeForMatching,
   messageHasAny,
   wantsAlternatives,
   extractMentionedMajors,
