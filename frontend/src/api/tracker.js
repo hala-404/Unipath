@@ -1,11 +1,10 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
-export async function fetchApplications(token) {
+export async function fetchApplications() {
   const response = await fetch(`${API_URL}/applications`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
   });
@@ -19,12 +18,11 @@ export async function fetchApplications(token) {
   return data;
 }
 
-export async function updateApplicationStatus(applicationId, status, token) {
+export async function updateApplicationStatus(applicationId, status) {
   const response = await fetch(`${API_URL}/applications/${applicationId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
     body: JSON.stringify({ status }),
@@ -39,12 +37,11 @@ export async function updateApplicationStatus(applicationId, status, token) {
   return data;
 }
 
-export async function updateApplicationChecklist(applicationId, checklist, token) {
+export async function updateApplicationChecklist(applicationId, checklist) {
   const response = await fetch(`${API_URL}/applications/${applicationId}/checklist`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
     body: JSON.stringify({ checklist }),
@@ -59,12 +56,11 @@ export async function updateApplicationChecklist(applicationId, checklist, token
   return data;
 }
 
-export async function deleteApplication(applicationId, token) {
+export async function deleteApplication(applicationId) {
   const response = await fetch(`${API_URL}/applications/${applicationId}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
   });
@@ -78,12 +74,11 @@ export async function deleteApplication(applicationId, token) {
   return data;
 }
 
-export async function addApplication(universityId, token) {
+export async function addApplication(universityId) {
   const response = await fetch(`${API_URL}/applications`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
     body: JSON.stringify({

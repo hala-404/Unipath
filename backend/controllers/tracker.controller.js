@@ -3,6 +3,25 @@ const { logActivity } = require("../utils/logActivity");
 const { ensureLocalUser } = require("../utils/ensureLocalUser");
 const { z } = require("zod");
 
+async function resolveTrackerUserId(req) {
+  // If Clerk auth exists, use the real linked user
+  if (req.auth?.userId) {
+    const localUser = await ensureLocalUser(pool, req);
+    return localUser.id;
+  }
+
+  // Development/demo fallback: use the first local user
+  const fallbackUser = await pool.query(
+    `SELECT id FROM users ORDER BY id ASC LIMIT 1`
+  );
+
+  if (!fallbackUser.rows.length) {
+    throw { status: 500, message: "No local users found for tracker fallback" };
+  }
+
+  return fallbackUser.rows[0].id;
+}
+
 const defaultChecklist = [
   { label: "Transcript", completed: false, priority: "high" },
   { label: "CV", completed: false, priority: "medium" },
@@ -29,8 +48,7 @@ async function createApplication(req, res) {
     }
 
     const { university_id, status } = parsed.data;
-    const localUser = await ensureLocalUser(pool, req);
-    const user_id = localUser.id;
+    const user_id = await resolveTrackerUserId(req);
 
     if (!university_id) {
       return res.status(400).json({ error: "university_id is required" });
@@ -70,8 +88,7 @@ async function createApplication(req, res) {
 
 async function listApplications(req, res) {
   try {
-    const localUser = await ensureLocalUser(pool, req);
-    const user_id = localUser.id;
+    const user_id = await resolveTrackerUserId(req);
 
     const result = await pool.query(
       `SELECT 
@@ -102,8 +119,7 @@ async function updateApplicationStatus(req, res) {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    const localUser = await ensureLocalUser(pool, req);
-    const user_id = localUser.id;
+    const user_id = await resolveTrackerUserId(req);
 
     if (!status) {
       return res.status(400).json({ error: "status is required" });
@@ -148,8 +164,7 @@ async function updateApplicationChecklist(req, res) {
   try {
     const { id } = req.params;
     const { checklist } = req.body;
-    const localUser = await ensureLocalUser(pool, req);
-    const user_id = localUser.id;
+    const user_id = await resolveTrackerUserId(req);
 
     if (!Array.isArray(checklist)) {
       return res.status(400).json({ error: "checklist must be an array" });
@@ -188,8 +203,7 @@ async function updateApplicationChecklist(req, res) {
 async function deleteApplication(req, res) {
   try {
     const { id } = req.params;
-    const localUser = await ensureLocalUser(pool, req);
-    const user_id = localUser.id;
+    const user_id = await resolveTrackerUserId(req);
 
     const result = await pool.query(
       `DELETE FROM applications

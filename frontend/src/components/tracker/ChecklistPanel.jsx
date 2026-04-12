@@ -9,6 +9,7 @@ const STATUS_OPTIONS = [
 export default function ChecklistPanel({
   applicationId,
   checklist,
+  status,
   getChecklistItemAnchorId,
   onToggleChecklistItem,
   onChangeChecklistPriority,
@@ -102,7 +103,7 @@ export default function ChecklistPanel({
 
       <div className="flex flex-col gap-3 md:w-56">
         <select
-          value={app.status}
+          value={status}
           onChange={(e) => onStatusChange(applicationId, e.target.value)}
           className="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500"
         >

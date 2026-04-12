@@ -1,10 +1,9 @@
 const express = require("express");
-const { requireAuth } = require("@clerk/express");
 const { getProfile, updateProfile } = require("../controllers/profile.controller");
 
 const router = express.Router();
 
-router.get("/", requireAuth(), getProfile);
-router.put("/", requireAuth(), updateProfile);
+router.get("/", getProfile);
+router.put("/", updateProfile);
 
 module.exports = router;
