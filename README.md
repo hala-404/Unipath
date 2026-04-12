@@ -18,7 +18,7 @@ UNIPATH helps students discover universities that fit their academic profile, tr
 - 👤 **Student profile** — persisted academic profile that feeds both recommendations and the advisor.
 - 📊 **Dashboard** — overview of saved universities, tracked applications, and upcoming deadlines.
 - ⏰ **Deadline reminders** — scheduled email reminders via a background job.
-- 🔐 **Authentication** — handled via Clerk.
+- 🔐 **Authentication** — handled via Clerk, with a local demo mode that can run without auth wiring.
 
 ---
 
@@ -27,7 +27,7 @@ UNIPATH helps students discover universities that fit their academic profile, tr
 **Frontend**
 - React 18 + Vite
 - Tailwind CSS
-- Clerk (authentication)
+- Clerk (authentication, optional in local demo mode)
 - ESLint
 
 **Backend**
@@ -217,6 +217,10 @@ npm run dev
 
 The app will be available at `http://localhost:5173` (default Vite port).
 
+### Demo mode note
+
+The current local setup is intentionally relaxed so the app can run end to end without Clerk middleware. If you want strict auth gating, restore the Clerk middleware and route protections in the backend and provide the Clerk environment variables.
+
 ---
 
 ## API Overview
@@ -236,7 +240,7 @@ The app will be available at `http://localhost:5173` (default Vite port).
 | GET    | `/dashboard`          | Dashboard summary                        |
 | POST   | `/chat`               | Send a message to the AI advisor         |
 
-> Routes are defined in `backend/routes/`. Authenticated routes require a valid Clerk session.
+> Routes are defined in `backend/routes/`. In the current local demo setup, auth is relaxed so the app can be exercised on localhost without Clerk.
 
 ---
 
@@ -248,15 +252,15 @@ npm test
 ```
 
 Current coverage is limited to smoke tests for the health endpoint and the universities endpoint.
-Current coverage also includes chat helper logic, chat prompt construction, and duplicate tracker protection.
+The suite also covers chat helper logic, chat prompt construction, and duplicate tracker protection.
 
 ## Testing & Quality
 
-- Backend tests implemented with Jest
-- Unit tests for chat helpers and prompt logic
-- Endpoint tests for core APIs
-- Coverage reporting enabled
-- CI pipeline runs tests and builds frontend
+- Backend tests use Jest and Supertest
+- Coverage is enabled in the backend test script
+- Endpoint tests cover health, universities, and tracker behavior
+- Unit tests cover chat helpers and prompt logic
+- CI runs backend tests plus the frontend build
 
 ---
 
