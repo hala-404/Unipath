@@ -1,18 +1,21 @@
 {
   "dependencies": {
     "@clerk/express": "^2.0.8",
+    "axios": "^1.15.0",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.9.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "node-cron": "^4.2.1",
     "pg": "^8.18.0",
+    "resend": "^6.10.0",
     "zod": "^4.3.6"
   },
-  "name": "backend",
+  "name": "unipath-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Backend API for UniPath - AI-based university application support system",
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
@@ -21,8 +24,8 @@
     "populate:images": "node scripts/populateUniversityImages.js",
     "cloudinary:get-images": "node scripts/getImages.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["university", "application", "ai", "recommendation", "tracker"],
+  "author": "Hala Serbouti",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
