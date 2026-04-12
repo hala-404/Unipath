@@ -9,7 +9,7 @@ async function callOpenRouter(messages) {
     {
       model: "meta-llama/llama-3-8b-instruct",
       messages,
-      temperature: 0.3, // Slightly higher for more natural responses
+      temperature: 0.3, // Lower temperature for more focused and deterministic responses
     },
     {
       headers: {
