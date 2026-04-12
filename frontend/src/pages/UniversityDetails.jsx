@@ -8,9 +8,9 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import ActionCard from "../components/university-details/ActionCard";
+import ProgramDetailsSection from "../components/university-details/ProgramDetailsSection";
 import QuickOverviewCard from "../components/university-details/QuickOverviewCard";
 import UniversityHeader from "../components/university/UniversityHeader";
-import UniversityInfoGrid from "../components/university/UniversityInfoGrid";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5050";
 
@@ -247,7 +247,7 @@ export default function UniversityDetails() {
 
         <div className="mt-10 grid gap-8 xl:grid-cols-[1.9fr_0.9fr]">
           <div className="space-y-8">
-            <UniversityInfoGrid university={university} />
+            <ProgramDetailsSection university={university} />
 
             <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mb-3 flex items-center gap-3">

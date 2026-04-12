@@ -47,39 +47,13 @@ export default function ChatPage() {
   }, [messages, loading]);
 
   useEffect(() => {
-    async function loadSuggestions() {
-      if (!isLoaded || !isSignedIn) return;
-
-      const fallbackSuggestions = [
-        "Recommend universities for my profile",
-        "Compare my tracked universities",
-        "What should I do next for my applications?",
-        "Which university fits me best?",
-      ];
-
-      try {
-        const token = await getToken();
-
-        const response = await fetch(`${API_URL}/chat/suggestions`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json();
-
-        if (response.ok && Array.isArray(data.suggestions)) {
-          setStarterSuggestions(data.suggestions);
-        } else {
-          setStarterSuggestions(fallbackSuggestions);
-        }
-      } catch (error) {
-        setStarterSuggestions(fallbackSuggestions);
-      }
-    }
-
-    loadSuggestions();
-  }, [getToken, isLoaded, isSignedIn]);
+    setStarterSuggestions([
+      "Recommend universities for my profile",
+      "Compare my tracked universities",
+      "What should I do next for my applications?",
+      "Which university fits me best?",
+    ]);
+  }, []);
 
   const messageCount = useMemo(() => messages.length, [messages.length]);
 

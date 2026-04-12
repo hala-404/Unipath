@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
-const { clerkMiddleware } = require("@clerk/express");
 
 const chatRoutes = require("./routes/chat.routes");
 const profileRoutes = require("./routes/profile.routes");
@@ -22,11 +21,8 @@ app.use(
 app.use(helmet());
 app.use(express.json());
 
-if (process.env.NODE_ENV === "test") {
-  app.use((req, res, next) => next());
-} else {
-  app.use(clerkMiddleware());
-}
+// Demo mode: disable Clerk middleware temporarily.
+// app.use(clerkMiddleware());
 
 app.use("/profile", profileRoutes);
 app.use("/applications", trackerRoutes);

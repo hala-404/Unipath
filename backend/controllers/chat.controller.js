@@ -1,6 +1,4 @@
-const axios = require("axios");
 const pool = require("../db/pool");
-const { getAuth } = require("@clerk/express");
 const { ensureLocalUser } = require("../utils/ensureLocalUser");
 const { z } = require("zod");
 const {
@@ -18,27 +16,71 @@ const {
   buildAnswerPrompt,
 } = require("../services/chatPrompt");
 
+async function resolveChatUserId(req) {
+  if (req.auth?.userId) {
+    const localUser = await ensureLocalUser(pool, req);
+    return localUser.id;
+  }
+
+  // Demo fallback when auth middleware/headers are not present.
+  const fallbackUser = await pool.query(
+    `SELECT id FROM users ORDER BY id ASC LIMIT 1`
+  );
+
+  if (!fallbackUser.rows.length) {
+    const fallbackError = new Error("No local users found for chat fallback");
+    fallbackError.status = 500;
+    throw fallbackError;
+  }
+
+  return fallbackUser.rows[0].id;
+}
+
 const chatSchema = z.object({
   message: z.string().min(1),
 });
 
 async function callOpenRouter(messages) {
-  const response = await axios.post(
-    "https://openrouter.ai/api/v1/chat/completions",
-    {
+  if (!process.env.OPENROUTER_API_KEY) {
+    const err = new Error("OPENROUTER_API_KEY is missing");
+    err.status = 500;
+    throw err;
+  }
+
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
       model: "meta-llama/llama-3-8b-instruct",
       messages,
-      temperature: 0.3, // Lower temperature for more focused and deterministic responses
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-    }
-  );
+      temperature: 0.3,
+    }),
+  });
 
-  return response.data.choices[0].message.content;
+  const rawText = await response.text();
+
+  if (!response.ok) {
+    console.error("OpenRouter error:", rawText);
+    const err = new Error("LLM provider request failed");
+    err.status = response.status;
+    err.details = rawText;
+    throw err;
+  }
+
+  let data;
+  try {
+    data = JSON.parse(rawText);
+  } catch {
+    const err = new Error("LLM provider returned invalid JSON");
+    err.status = 502;
+    err.details = rawText;
+    throw err;
+  }
+
+  return data?.choices?.[0]?.message?.content || "";
 }
 
 const chatWithAdvisor = async (req, res) => {
@@ -52,8 +94,7 @@ const chatWithAdvisor = async (req, res) => {
     const { message } = parsed.data;
     const { history = [] } = req.body;
 
-    const localUser = await ensureLocalUser(pool, req);
-    const userId = localUser.id;
+    const userId = await resolveChatUserId(req);
 
     // 1. Load saved user profile
     const profileResult = await pool.query(
@@ -258,14 +299,20 @@ const chatWithAdvisor = async (req, res) => {
 
     return res.status(200).json({ reply });
   } catch (error) {
+    if (error?.status) {
+      return res.status(error.status).json({
+        error: error.message || "Chat request failed",
+        details: error.details,
+      });
+    }
+
     throw error;
   }
 };
 
 const getChatSuggestions = async (req, res) => {
   try {
-    const localUser = await ensureLocalUser(pool, req);
-    const user_id = localUser.id;
+    const user_id = await resolveChatUserId(req);
 
     const profileResult = await pool.query(
       `SELECT preferred_program, preferred_city, preferred_country
