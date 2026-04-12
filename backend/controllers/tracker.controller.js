@@ -1,5 +1,6 @@
 const pool = require("../db/pool");
 const { logActivity } = require("../utils/logActivity");
+const { ensureLocalUser } = require("../utils/ensureLocalUser");
 
 const defaultChecklist = [
   { label: "Transcript", completed: false, priority: "high" },
@@ -16,7 +17,8 @@ const defaultChecklist = [
 async function createApplication(req, res) {
   try {
     const { university_id, status } = req.body;
-    const user_id = 1;
+    const localUser = await ensureLocalUser(pool, req);
+    const user_id = localUser.id;
 
     if (!university_id) {
       return res.status(400).json({ error: "university_id is required" });
@@ -61,7 +63,8 @@ async function createApplication(req, res) {
 
 async function listApplications(req, res) {
   try {
-    const user_id = 1;
+    const localUser = await ensureLocalUser(pool, req);
+    const user_id = localUser.id;
 
     const result = await pool.query(
       `SELECT 
@@ -92,7 +95,8 @@ async function updateApplicationStatus(req, res) {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    const user_id = 1;
+    const localUser = await ensureLocalUser(pool, req);
+    const user_id = localUser.id;
 
     if (!status) {
       return res.status(400).json({ error: "status is required" });
@@ -137,7 +141,8 @@ async function updateApplicationChecklist(req, res) {
   try {
     const { id } = req.params;
     const { checklist } = req.body;
-    const user_id = 1;
+    const localUser = await ensureLocalUser(pool, req);
+    const user_id = localUser.id;
 
     if (!Array.isArray(checklist)) {
       return res.status(400).json({ error: "checklist must be an array" });
@@ -176,7 +181,8 @@ async function updateApplicationChecklist(req, res) {
 async function deleteApplication(req, res) {
   try {
     const { id } = req.params;
-    const user_id = 1;
+    const localUser = await ensureLocalUser(pool, req);
+    const user_id = localUser.id;
 
     const result = await pool.query(
       `DELETE FROM applications
