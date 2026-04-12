@@ -20,8 +20,7 @@ async function getProfile(req, res) {
 
     return res.json(result.rows[0]);
   } catch (err) {
-    console.error("PROFILE ERROR:", err);
-    return res.status(err.status || 500).json({ error: err.message });
+    throw err;
   }
 }
 
@@ -99,8 +98,7 @@ async function updateProfile(req, res) {
       profile: result.rows[0],
     });
   } catch (err) {
-    console.error("PROFILE ERROR:", err);
-    return res.status(err.status || 500).json({ error: err.message });
+    throw err;
   }
 }
 

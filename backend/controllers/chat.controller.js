@@ -2,6 +2,25 @@ const axios = require("axios");
 const pool = require("../db/pool");
 const { getAuth } = require("@clerk/express");
 const { ensureLocalUser } = require("../utils/ensureLocalUser");
+const { z } = require("zod");
+const {
+  safeJsonParse,
+  normalizeText,
+  messageHasAny,
+  wantsAlternatives,
+  extractMentionedMajors,
+  extractInterestsFromHistory,
+  scoreMajorsFromMessage,
+  formatResponse,
+} = require("../utils/chatHelpers");
+const {
+  buildExtractionPrompt,
+  buildAnswerPrompt,
+} = require("../services/chatPrompt");
+
+const chatSchema = z.object({
+  message: z.string().min(1),
+});
 
 async function callOpenRouter(messages) {
   const response = await axios.post(
@@ -22,229 +41,16 @@ async function callOpenRouter(messages) {
   return response.data.choices[0].message.content;
 }
 
-function safeJsonParse(text) {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return null;
-  }
-}
-
-function normalizeText(text = "") {
-  return text.toLowerCase().trim();
-}
-
-function messageHasAny(message, keywords) {
-  const lower = normalizeText(message);
-  return keywords.some((word) => lower.includes(word));
-}
-
-/**
- * Check if user is asking for alternatives/different options
- */
-function wantsAlternatives(message) {
-  const lower = normalizeText(message);
-  const alternativeKeywords = [
-    "another", "other", "different", "else", "alternative",
-    "more options", "what else", "something else", "besides",
-    "instead", "not that", "give me more", "any other"
-  ];
-  return alternativeKeywords.some((kw) => lower.includes(kw));
-}
-
-/**
- * Extract majors that have already been mentioned in conversation history
- */
-function extractMentionedMajors(history, availableMajors) {
-  const mentioned = new Set();
-  const allText = history
-    .map((msg) => msg.content || "")
-    .join(" ")
-    .toLowerCase();
-
-  availableMajors.forEach((major) => {
-    if (allText.includes(major.toLowerCase())) {
-      mentioned.add(major);
-    }
-  });
-
-  return Array.from(mentioned);
-}
-
-/**
- * Extract user interests from entire conversation history
- */
-function extractInterestsFromHistory(history) {
-  const allText = history
-    .filter((msg) => msg.role === "user")
-    .map((msg) => msg.content || "")
-    .join(" ")
-    .toLowerCase();
-
-  const interests = [];
-
-  if (messageHasAny(allText, ["math", "mathematics", "statistics", "analysis", "numbers"])) {
-    interests.push("math");
-  }
-  if (messageHasAny(allText, ["coding", "programming", "code", "developer", "software"])) {
-    interests.push("coding");
-  }
-  if (messageHasAny(allText, ["business", "management", "finance", "marketing", "economics"])) {
-    interests.push("business");
-  }
-  if (messageHasAny(allText, ["design", "creative", "art", "media", "visual"])) {
-    interests.push("design");
-  }
-  if (messageHasAny(allText, ["biology", "health", "medical", "medicine", "science"])) {
-    interests.push("health");
-  }
-  if (messageHasAny(allText, ["engineer", "engineering", "machines", "mechanical", "build"])) {
-    interests.push("engineering");
-  }
-  if (messageHasAny(allText, ["data", "analytics", "ai", "machine learning"])) {
-    interests.push("data");
-  }
-
-  return interests;
-}
-
-function scoreMajorsFromMessage(message, availableMajors, history = [], excludeMajors = []) {
-  const lower = normalizeText(message);
-
-  const majorScores = {};
-  availableMajors.forEach((major) => {
-    // Skip majors we want to exclude (already mentioned)
-    if (excludeMajors.some((ex) => normalizeText(ex) === normalizeText(major))) {
-      majorScores[major] = -100; // Negative score to exclude
-    } else {
-      majorScores[major] = 0;
-    }
-  });
-
-  const boostIfExists = (majorName, points) => {
-    const found = availableMajors.find(
-      (m) => normalizeText(m) === normalizeText(majorName)
-    );
-    if (found && majorScores[found] >= 0) {
-      majorScores[found] += points;
-    }
-  };
-
-  // Check current message AND history for interests
-  const interests = extractInterestsFromHistory([...history, { role: "user", content: message }]);
-
-  if (interests.includes("math")) {
-    boostIfExists("Data Science", 3);
-    boostIfExists("Computer Science", 2);
-    boostIfExists("Mathematics", 3);
-    boostIfExists("Statistics", 3);
-    boostIfExists("Business Analytics", 2);
-    boostIfExists("Economics", 2);
-    boostIfExists("Finance", 2);
-    boostIfExists("Actuarial Science", 2);
-  }
-
-  if (interests.includes("coding")) {
-    boostIfExists("Computer Science", 3);
-    boostIfExists("Data Science", 2);
-    boostIfExists("Software Engineering", 3);
-    boostIfExists("Information Technology", 2);
-    boostIfExists("Cybersecurity", 2);
-  }
-
-  if (interests.includes("business")) {
-    boostIfExists("Business", 3);
-    boostIfExists("Business Analytics", 2);
-    boostIfExists("Marketing", 2);
-    boostIfExists("Finance", 2);
-    boostIfExists("Economics", 2);
-    boostIfExists("Management", 2);
-  }
-
-  if (interests.includes("design")) {
-    boostIfExists("Design", 3);
-    boostIfExists("Graphic Design", 3);
-    boostIfExists("UX Design", 3);
-    boostIfExists("Architecture", 2);
-    boostIfExists("Media Studies", 2);
-  }
-
-  if (interests.includes("health")) {
-    boostIfExists("Biology", 3);
-    boostIfExists("Public Health", 2);
-    boostIfExists("Nursing", 2);
-    boostIfExists("Medicine", 3);
-    boostIfExists("Pharmacy", 2);
-    boostIfExists("Psychology", 2);
-  }
-
-  if (interests.includes("engineering")) {
-    boostIfExists("Engineering", 3);
-    boostIfExists("Mechanical Engineering", 3);
-    boostIfExists("Electrical Engineering", 3);
-    boostIfExists("Civil Engineering", 2);
-    boostIfExists("Computer Engineering", 2);
-  }
-
-  if (interests.includes("data")) {
-    boostIfExists("Data Science", 3);
-    boostIfExists("Business Analytics", 2);
-    boostIfExists("Statistics", 2);
-    boostIfExists("Computer Science", 2);
-  }
-
-  const sortedMajors = Object.entries(majorScores)
-    .filter(([, score]) => score > 0)
-    .sort((a, b) => b[1] - a[1]);
-
-  return sortedMajors;
-}
-
-/**
- * Format AI response into clean, readable paragraphs
- * Forces line breaks every 2-3 sentences for readability
- */
-function formatResponse(text) {
-  if (!text) return "";
-
-  let formatted = text;
-
-  // Fix broken decimals like "3. 9"
-  formatted = formatted.replace(/(\d)\.\s+(\d)/g, "$1.$2");
-
-  // Protect decimals temporarily (3.9)
-  formatted = formatted.replace(/(\d)\.(\d)/g, "$1<<<DOT>>>$2");
-
-  // Split ONLY on sentence endings (. ? !)
-  const sentences = formatted
-    .split(/(?<=[.!?])\s+/)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
-
-  // Group sentences (2 sentences per paragraph)
-  const paragraphs = [];
-  for (let i = 0; i < sentences.length; i += 2) {
-    paragraphs.push(sentences.slice(i, i + 2).join(" "));
-  }
-
-  formatted = paragraphs.join("\n\n");
-
-  // Restore decimals
-  formatted = formatted.replace(/<<<DOT>>>/g, ".");
-
-  // Clean spacing
-  formatted = formatted.replace(/\n{3,}/g, "\n\n").trim();
-
-  return formatted;
-}
-
 const chatWithAdvisor = async (req, res) => {
   try {
-    const { message, history = [] } = req.body;
+    const parsed = chatSchema.safeParse(req.body);
 
-    if (!message || !message.trim()) {
+    if (!parsed.success) {
       return res.status(400).json({ message: "Message is required." });
     }
+
+    const { message } = parsed.data;
+    const { history = [] } = req.body;
 
     const localUser = await ensureLocalUser(pool, req);
     const userId = localUser.id;
@@ -276,39 +82,7 @@ const chatWithAdvisor = async (req, res) => {
         : "No majors available right now.";
 
     // 3. Ask AI to extract structured search filters
-    const extractionPrompt = `
-You are an information extraction assistant.
-
-Available majors: ${availableMajorsText}
-
-Convert the user's message into JSON only.
-
-Return ONLY valid JSON.
-Do not add explanation.
-Do not use markdown.
-Do not wrap in backticks.
-
-Allowed schema:
-{
-  "intent": "university_search" | "deadline_question" | "general_guidance" | "major_guidance",
-  "city": string or null,
-  "city_mode": "exact" | "different_from_profile" | null,
-  "program": string or null,
-  "language": string or null,
-  "wants_alternatives": boolean,
-  "deadline_interest": boolean
-}
-
-Rules:
-- If the user asks for another city, set "city_mode" to "different_from_profile"
-- If the user mentions a city, set "city" to that city and "city_mode" to "exact"
-- If the user mentions a program or major, extract it into "program"
-- If the user mentions a language, extract it
-- If the message is about deadlines, set "deadline_interest" to true
-- If the message is asking about majors, suitable fields, another major, or best fit, use "major_guidance"
-- If the message is asking for universities, options, or matches, use "university_search"
-- If it is general advice, use "general_guidance"
-`;
+    const extractionPrompt = buildExtractionPrompt(availableMajorsText);
 
     const extractionRaw = await callOpenRouter([
       { role: "system", content: extractionPrompt },
@@ -465,64 +239,13 @@ Rules:
 
     // 6. Final AI explanation - IMPROVED PROMPT
 
-    const answerPrompt = `You are UniPath Assistant, a friendly and knowledgeable student advisor helping students find the right university and program.
-
-  CONVERSATION BEHAVIOR RULES:
-
-  - If the user says "yes", DO NOT repeat previous information
-  - Instead, CONTINUE to the next logical step
-
-  Examples:
-  - If you just recommended a university → give application steps
-  - If you just explained a program → give more detailed info (curriculum, process, requirements)
-  - If you already gave details → move forward (next steps, tips, deadlines)
-
-  - NEVER repeat the same recommendation unless the user asks again
-  - NEVER ask the same question twice
-  - Always move the conversation forward
-  - Avoid repeating the same university or major multiple times
-  - If the user says "yes", assume they want deeper or next-step information
-
-STUDENT PROFILE:
-- GPA: ${profile.gpa ?? "Not set"}
-- Preferred city: ${profile.preferred_city ?? "Not set"}
-- Preferred program: ${profile.preferred_program ?? "Not set"}
-- Preferred language: ${profile.preferred_language ?? "Not set"}
-
-USER REQUEST ANALYSIS:
-${JSON.stringify(extracted, null, 2)}
-
-USER WANTS ALTERNATIVES: ${userWantsAlternatives ? "YES - they asked for different/other options" : "NO"}
-
-RECOMMENDED MAJORS:
-${recommendedMajorsText}
-
-AVAILABLE UNIVERSITIES (use ONLY these):
-${universityList}
-
-STRICT RULES:
-1. ONLY mention majors from "RECOMMENDED MAJORS" section - do NOT invent others
-2. ONLY mention universities from "AVAILABLE UNIVERSITIES" section
-3. If the user asks for OTHER/DIFFERENT majors but you only have one to offer, APOLOGIZE and explain honestly that currently only limited programs are available, but more will be added soon
-4. Never mention "database", "system", "retrieved", or "provided list"
-5. Speak naturally like a helpful human advisor
-6. DO NOT keep repeating the same major if the user asked for something different
-
-RESPONSE FORMAT - THIS IS CRITICAL:
-- Write in SHORT paragraphs (2-3 sentences each)
-- Put a BLANK LINE between each paragraph
-- Start with a brief friendly opening (1 sentence)
-- Give your main advice in the middle paragraphs
-- End with ONE helpful follow-up question
-
-EXAMPLE WHEN USER ASKS FOR ALTERNATIVES BUT NONE AVAILABLE:
-I understand you'd like to explore other options! Unfortunately, at the moment our platform primarily focuses on Data Science programs.
-
-We're actively working on adding more programs like Computer Science, Business Analytics, and Statistics. These would be great fits for someone with your math background.
-
-In the meantime, would you like me to show you the Data Science universities available, or would you prefer to check back later when we have more options?
-
-NOW RESPOND TO THE USER'S MESSAGE:`;
+    const answerPrompt = buildAnswerPrompt({
+      profile,
+      extracted,
+      userWantsAlternatives,
+      recommendedMajorsText,
+      universityList,
+    });
 
     let reply = await callOpenRouter([
       { role: "system", content: answerPrompt },
@@ -535,10 +258,7 @@ NOW RESPOND TO THE USER'S MESSAGE:`;
 
     return res.status(200).json({ reply });
   } catch (error) {
-    console.error("Chat error:", error.response?.data || error.message);
-    return res.status(error.status || 500).json({
-      message: error.message || "Failed to get chatbot response.",
-    });
+    throw error;
   }
 };
 
@@ -608,7 +328,7 @@ const getChatSuggestions = async (req, res) => {
 
     return res.json({ suggestions: finalSuggestions });
   } catch (err) {
-    return res.status(err.status || 500).json({ error: err.message });
+    throw err;
   }
 };
 

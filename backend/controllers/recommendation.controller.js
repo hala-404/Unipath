@@ -254,7 +254,7 @@ async function getRecommendations(req, res) {
       alternativeRecommendations,
     });
   } catch (err) {
-    return res.status(err.status || 500).json({ error: err.message });
+    throw err;
   }
 }
 

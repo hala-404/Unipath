@@ -1,6 +1,7 @@
 const pool = require("../db/pool");
 const { logActivity } = require("../utils/logActivity");
 const { ensureLocalUser } = require("../utils/ensureLocalUser");
+const { z } = require("zod");
 
 const defaultChecklist = [
   { label: "Transcript", completed: false, priority: "high" },
@@ -14,9 +15,20 @@ const defaultChecklist = [
   { label: "Passport", completed: false, priority: "high" },
 ];
 
+const applicationSchema = z.object({
+  university_id: z.number(),
+  status: z.string().optional(),
+});
+
 async function createApplication(req, res) {
   try {
-    const { university_id, status } = req.body;
+    const parsed = applicationSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid application data" });
+    }
+
+    const { university_id, status } = parsed.data;
     const localUser = await ensureLocalUser(pool, req);
     const user_id = localUser.id;
 
@@ -87,7 +99,7 @@ async function listApplications(req, res) {
 
     return res.json(result.rows);
   } catch (err) {
-    return res.status(err.status || 500).json({ error: err.message });
+    throw err;
   }
 }
 
@@ -133,7 +145,7 @@ async function updateApplicationStatus(req, res) {
 
     return res.json(result.rows[0]);
   } catch (err) {
-    return res.status(err.status || 500).json({ error: err.message });
+    throw err;
   }
 }
 
@@ -174,7 +186,7 @@ async function updateApplicationChecklist(req, res) {
 
     return res.json(result.rows[0]);
   } catch (err) {
-    return res.status(err.status || 500).json({ error: err.message });
+    throw err;
   }
 }
 
@@ -211,7 +223,7 @@ async function deleteApplication(req, res) {
 
     return res.json({ deleted: true, application: result.rows[0] });
   } catch (err) {
-    return res.status(err.status || 500).json({ error: err.message });
+    throw err;
   }
 }
 

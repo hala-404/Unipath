@@ -70,7 +70,8 @@ Unipath/
 │   │   ├── asyncHandler.js
 │   │   └── errorHandler.js
 │   ├── services/
-│   │   └── email.service.js      # Reminder emails
+│   │   ├── email.service.js
+│   │   └── chatPrompt.js
 │   ├── jobs/
 │   │   └── reminder.job.js       # Scheduled deadline reminders
 │   ├── db/
@@ -79,8 +80,11 @@ Unipath/
 │   │   └── seeds/                # Seed data (universities)
 │   ├── scripts/                  # Utility scripts (image population, etc.)
 │   ├── utils/
-│   └── tests/                    # Jest / supertest smoke tests
-│
+│   │   ├── chatHelpers.js
+│   │   ├── ensureLocalUser.js
+│   │   └── logActivity.js
+│   └── tests/
+
 ├── frontend/
 │   ├── index.html
 │   ├── vite.config.js
