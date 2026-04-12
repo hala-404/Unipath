@@ -30,7 +30,7 @@ describe("Health endpoint", () => {
     const res = await request(app).get("/health");
 
     expect(res.statusCode).toBe(500);
-    expect(res.body).toHaveProperty("ok", false);
     expect(res.body).toHaveProperty("error");
+    expect(res.body.error).toBe("Internal server error");
   });
 });

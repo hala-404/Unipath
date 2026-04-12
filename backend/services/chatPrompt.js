@@ -101,7 +101,20 @@ In the meantime, would you like me to show you the Data Science universities ava
 NOW RESPOND TO THE USER'S MESSAGE:`;
 }
 
+function buildPrompt(profile = {}, universities = []) {
+  return buildAnswerPrompt({
+    profile,
+    extracted: {},
+    userWantsAlternatives: false,
+    recommendedMajorsText: "",
+    universityList: universities
+      .map((university) => (typeof university === "string" ? university : university.name || JSON.stringify(university)))
+      .join("\n"),
+  });
+}
+
 module.exports = {
   buildExtractionPrompt,
   buildAnswerPrompt,
+  buildPrompt,
 };

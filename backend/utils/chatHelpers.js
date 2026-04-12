@@ -25,7 +25,27 @@ function wantsAlternatives(message) {
   return alternativeKeywords.some((kw) => lower.includes(kw));
 }
 
-function extractMentionedMajors(history, availableMajors) {
+function extractMentionedMajors(history, availableMajors = []) {
+  if (typeof history === "string") {
+    const text = history.toLowerCase();
+    const fallbackMajors = [
+      "computer science",
+      "data science",
+      "business analytics",
+      "mathematics",
+      "statistics",
+      "engineering",
+      "finance",
+      "medicine",
+      "psychology",
+      "design",
+      "biology",
+      "ai",
+    ];
+
+    return fallbackMajors.filter((major) => text.includes(major));
+  }
+
   const mentioned = new Set();
   const allText = history
     .map((msg) => msg.content || "")

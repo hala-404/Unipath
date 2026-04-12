@@ -64,12 +64,7 @@ async function createApplication(req, res) {
       return res.status(400).json({ error: "University already added to tracker" });
     }
 
-    if (err.status) {
-      return res.status(err.status).json({ error: err.message });
-    }
-
-    console.error(err);
-    return res.status(500).json({ error: "Server error" });
+    throw err;
   }
 }
 

@@ -1,6 +1,13 @@
 const pool = require("../db/pool");
 const { ensureLocalUser } = require("../utils/ensureLocalUser");
 const { logActivity } = require("../utils/logActivity");
+const { z } = require("zod");
+
+const profileSchema = z.object({
+  gpa: z.number().optional(),
+  preferred_city: z.string().optional(),
+  preferred_program: z.string().optional(),
+}).passthrough();
 
 async function getProfile(req, res) {
   try {
@@ -28,6 +35,12 @@ async function updateProfile(req, res) {
   try {
     const localUser = await ensureLocalUser(pool, req);
     const user_id = localUser.id;
+    const parsed = profileSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid profile data" });
+    }
+
     const {
       full_name,
       gpa,
@@ -37,7 +50,7 @@ async function updateProfile(req, res) {
       preferred_language,
       max_tuition,
       reminders_enabled,
-    } = req.body;
+    } = parsed.data;
 
     if (gpa !== null && gpa !== undefined) {
       const numericGpa = Number(gpa);

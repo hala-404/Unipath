@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
 const { clerkMiddleware } = require("@clerk/express");
 
 const chatRoutes = require("./routes/chat.routes");
@@ -18,6 +19,7 @@ app.use(
     credentials: true,
   })
 );
+app.use(helmet());
 app.use(express.json());
 
 if (process.env.NODE_ENV === "test") {
@@ -37,7 +39,7 @@ app.get("/health", async (req, res) => {
     const result = await pool.query("SELECT NOW() as now");
     res.json({ ok: true, db_time: result.rows[0].now });
   } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+    throw err;
   }
 });
 

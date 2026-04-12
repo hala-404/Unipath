@@ -33,7 +33,7 @@ async function listUniversities(req, res) {
     const result = await pool.query(sql, values);
     return res.json(result.rows);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    throw err;
   }
 }
 
@@ -46,7 +46,7 @@ async function getUniversityById(req, res) {
     }
     return res.json(result.rows[0]);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    throw err;
   }
 }
 
