@@ -55,6 +55,7 @@ Unipath/
 ├── backend/
 │   ├── app.js                    # Express app setup
 │   ├── server.js                 # Entry point
+│   ├── .env.example
 │   ├── config/
 │   │   ├── env.js                # Environment loading
 │   │   └── cloudinary.js         # Cloudinary client
@@ -84,10 +85,16 @@ Unipath/
 │   │   ├── ensureLocalUser.js
 │   │   └── logActivity.js
 │   └── tests/
+│       ├── health.test.js
+│       ├── universities.test.js
+│       ├── chatHelpers.test.js
+│       ├── chatPrompt.test.js
+│       └── tracker.test.js
 
 ├── frontend/
 │   ├── index.html
 │   ├── vite.config.js
+│   ├── .env.example
 │   ├── tailwind.config.js
 │   └── src/
 │       ├── main.jsx
@@ -241,6 +248,7 @@ npm test
 ```
 
 Current coverage is limited to smoke tests for the health endpoint and the universities endpoint.
+Current coverage also includes chat helper logic, chat prompt construction, and duplicate tracker protection.
 
 ---
 
