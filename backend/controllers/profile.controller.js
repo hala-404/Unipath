@@ -2,26 +2,8 @@ const pool = require("../db/pool");
 const { ensureLocalUser } = require("../utils/ensureLocalUser");
 const { logActivity } = require("../utils/logActivity");
 
-async function ensureProfileColumns() {
-  await pool.query(`
-    ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS full_name TEXT
-  `);
-
-  await pool.query(`
-    ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS preferred_country TEXT
-  `);
-
-  await pool.query(`
-    ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS max_tuition NUMERIC
-  `);
-}
-
 async function getProfile(req, res) {
   try {
-    await ensureProfileColumns();
     const localUser = await ensureLocalUser(pool, req);
     const user_id = localUser.id;
 
@@ -45,7 +27,6 @@ async function getProfile(req, res) {
 
 async function updateProfile(req, res) {
   try {
-    await ensureProfileColumns();
     const localUser = await ensureLocalUser(pool, req);
     const user_id = localUser.id;
     const {
