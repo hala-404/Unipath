@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
 
+function getInitialTheme() {
+  const saved = localStorage.getItem("theme");
+  if (saved === "light" || saved === "dark") return saved;
+
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
+}
+
 export default function useTheme() {
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("theme") || "light";
-  });
+  const [theme, setTheme] = useState(getInitialTheme);
 
   useEffect(() => {
     const root = document.documentElement;
 
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
+    root.classList.remove("light", "dark");
+    root.classList.add(theme);
 
     localStorage.setItem("theme", theme);
   }, [theme]);

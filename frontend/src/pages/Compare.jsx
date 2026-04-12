@@ -159,14 +159,14 @@ export default function Compare() {
                 gridTemplateColumns: `260px repeat(${displayedUniversities.length}, minmax(0, 1fr))`,
               }}
             >
-              <div className="p-5 text-lg font-semibold text-slate-700 dark:text-slate-300">Compare</div>
+              <div className="p-5 text-base font-semibold text-slate-700 dark:text-slate-300">Compare</div>
 
               {displayedUniversities.map((uni) => (
                 <div
                   key={uni.id}
                   className="flex items-center justify-between border-l border-slate-200 p-5 dark:border-slate-800"
                 >
-                  <h2 className="text-center text-xl font-bold text-slate-900 dark:text-slate-100">
+                  <h2 className="text-center text-lg font-bold text-slate-900 dark:text-slate-100">
                     {uni.name}
                   </h2>
                   <button
@@ -191,7 +191,7 @@ export default function Compare() {
                     gridTemplateColumns: `260px repeat(${displayedUniversities.length}, minmax(0, 1fr))`,
                   }}
                 >
-                  <div className="p-5 font-medium text-slate-600 dark:text-slate-400">{row.label}</div>
+                  <div className="p-5 text-sm font-medium text-slate-600 dark:text-slate-400">{row.label}</div>
 
                   {displayedUniversities.map((uni, index) => {
                     const isWinner = winners[index];
@@ -205,18 +205,18 @@ export default function Compare() {
                       >
                         {row.isRisk && uni ? (
                           <span
-                            className={`inline-flex rounded-full px-4 py-2 text-sm font-semibold ${riskBadgeClasses(
+                            className={`inline-flex rounded-full px-4 py-2 text-xs font-semibold ${riskBadgeClasses(
                               uni.risk || "Match"
                             )}`}
                           >
                             {uni.risk || "Match"}
                           </span>
                         ) : row.key === "fit_score" && uni ? (
-                          <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300">
+                          <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-100 px-4 py-2 text-xs font-semibold text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300">
                             {formatValue(row, uni)} fit
                           </span>
                         ) : (
-                          <span className="text-xl text-slate-900 dark:text-slate-100">
+                          <span className="text-lg text-slate-900 dark:text-slate-100">
                             {formatValue(row, uni)}
                           </span>
                         )}

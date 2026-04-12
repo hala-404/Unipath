@@ -429,7 +429,7 @@ export default function Recommendations() {
           </p>
         </div>
 
-        <div className="mb-8 rounded-3xl border border-emerald-200 bg-white p-6 shadow-sm dark:border-emerald-900/50 dark:bg-slate-900">
+        <div className="mb-8 rounded-3xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0c1a31]">
           <div className="flex items-center gap-3">
             <BrainCircuit className="h-5 w-5 text-emerald-600" />
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Your Profile Summary</h2>
@@ -500,16 +500,19 @@ export default function Recommendations() {
           </div>
         </div>
 
-        <div className="mb-10 flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-10 flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#0c1a31]">
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="text-slate-500 dark:text-slate-400">Active filters:</span>
             {filterPills.length > 0 ? (
               filterPills.map((pill) => (
                 <span
                   key={pill}
-                  className="rounded-full bg-slate-100 px-3 py-1 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  className="inline-flex items-center gap-2 rounded-full bg-black/5 px-4 py-2 text-sm text-slate-700 dark:bg-white/10 dark:text-slate-200"
                 >
                   {pill}
+                  <button type="button" className="opacity-60 hover:opacity-100">
+                    ×
+                  </button>
                 </span>
               ))
             ) : (
@@ -536,7 +539,7 @@ export default function Recommendations() {
           </p>
 
           {exactMatches.length === 0 ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+            <div className="rounded-3xl border border-black/10 bg-white p-6 text-slate-600 shadow-sm dark:border-white/10 dark:bg-[#0c1a31] dark:text-slate-400">
               No exact matches found for your current preferences.
             </div>
           ) : (
@@ -566,7 +569,7 @@ export default function Recommendations() {
             </p>
 
             {alternativeRecommendations.length === 0 ? (
-              <div className="rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+              <div className="rounded-3xl border border-black/10 bg-white p-6 text-slate-600 shadow-sm dark:border-white/10 dark:bg-[#0c1a31] dark:text-slate-400">
                 No alternative recommendations available.
               </div>
             ) : (
