@@ -30,7 +30,42 @@ describe("tracker controller", () => {
     ensureLocalUser.mockResolvedValue({ id: 7 });
   });
 
-  test("prevents duplicate application", async () => {
+  test("returns 400 when university_id is missing", async () => {
+    const req = { body: {} };
+    const res = createMockRes();
+
+    await createApplication(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Invalid application data",
+    });
+  });
+
+  test("creates an application successfully", async () => {
+    pool.query
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, user_id: 7, university_id: 11, status: "Not Started" }],
+      })
+      .mockResolvedValueOnce({
+        rows: [{ name: "Test University" }],
+      });
+
+    const req = { body: { university_id: 11, status: "Not Started" } };
+    const res = createMockRes();
+
+    await createApplication(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith({
+      id: 1,
+      user_id: 7,
+      university_id: 11,
+      status: "Not Started",
+    });
+  });
+
+  test("returns 400 when duplicate application is inserted", async () => {
     pool.query
       .mockResolvedValueOnce({
         rows: [{ id: 1, user_id: 7, university_id: 11, status: "Not Started" }],
@@ -38,7 +73,9 @@ describe("tracker controller", () => {
       .mockResolvedValueOnce({
         rows: [{ name: "Test University" }],
       })
-      .mockRejectedValueOnce(Object.assign(new Error("duplicate key"), { code: "23505" }));
+      .mockRejectedValueOnce(
+        Object.assign(new Error("duplicate key"), { code: "23505" })
+      );
 
     const firstReq = { body: { university_id: 11, status: "Not Started" } };
     const firstRes = createMockRes();
@@ -46,12 +83,6 @@ describe("tracker controller", () => {
     await createApplication(firstReq, firstRes);
 
     expect(firstRes.status).toHaveBeenCalledWith(201);
-    expect(firstRes.json).toHaveBeenCalledWith({
-      id: 1,
-      user_id: 7,
-      university_id: 11,
-      status: "Not Started",
-    });
 
     const secondReq = { body: { university_id: 11, status: "Not Started" } };
     const secondRes = createMockRes();
@@ -64,53 +95,36 @@ describe("tracker controller", () => {
     });
   });
 
-  test("keeps tracker data isolated by user", async () => {
-    ensureLocalUser
-      .mockResolvedValueOnce({ id: 1 })
-      .mockResolvedValueOnce({ id: 2 });
+  test("list only returns current user's applications", async () => {
+    ensureLocalUser.mockResolvedValue({ id: 2 });
 
-    pool.query
-      .mockResolvedValueOnce({
-        rows: [{ id: 10, user_id: 1, university_id: 99, status: "Not Started" }],
-      })
-      .mockResolvedValueOnce({
-        rows: [{ name: "User A University" }],
-      })
-      .mockResolvedValueOnce({
-        rows: [
-          {
-            application_id: 22,
-            status: "In Progress",
-            user_id: 2,
-            checklist: [],
-            university_id: 55,
-            name: "User B University",
-            city: "Shanghai",
-            country: "China",
-            program: "Data Science",
-            deadline: "2026-06-01",
-          },
-        ],
-      });
+    pool.query.mockResolvedValueOnce({
+      rows: [
+        {
+          application_id: 22,
+          status: "In Progress",
+          user_id: 2,
+          checklist: [],
+          university_id: 55,
+          name: "User B University",
+          city: "Shanghai",
+          country: "China",
+          program: "Data Science",
+          deadline: "2026-06-01",
+        },
+      ],
+    });
 
-    const addReq = { body: { university_id: 99, status: "Not Started" } };
-    const addRes = createMockRes();
+    const req = {};
+    const res = createMockRes();
 
-    await createApplication(addReq, addRes);
+    await listApplications(req, res);
 
-    expect(addRes.status).toHaveBeenCalledWith(201);
-
-    const listReq = {};
-    const listRes = createMockRes();
-
-    await listApplications(listReq, listRes);
-
-    expect(pool.query).toHaveBeenNthCalledWith(
-      3,
+    expect(pool.query).toHaveBeenCalledWith(
       expect.stringContaining("WHERE a.user_id = $1"),
       [2]
     );
-    expect(listRes.json).toHaveBeenCalledWith([
+    expect(res.json).toHaveBeenCalledWith([
       {
         application_id: 22,
         status: "In Progress",

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@clerk/react";
 import { useLocation } from "react-router-dom";
-import { CalendarCheck2, FileText } from "lucide-react";
+import TrackerHeader from "../components/tracker/TrackerHeader";
+import ApplicationCard from "../components/tracker/ApplicationCard";
+import ChecklistPanel from "../components/tracker/ChecklistPanel";
 
 import {
   fetchApplications,
@@ -51,44 +53,6 @@ function getDeadlineCardClasses(deadline) {
   if (diffDays < 0) return "ring-red-300 bg-red-50 dark:ring-red-900/50 dark:bg-red-950/20";
   if (diffDays <= 7) return "ring-yellow-300 bg-yellow-50 dark:ring-yellow-900/50 dark:bg-yellow-950/20";
   return "ring-slate-200 bg-white dark:ring-slate-800 dark:bg-slate-900";
-}
-
-const STATUS_OPTIONS = [
-  "Not Started",
-  "In Progress",
-  "Submitted",
-  "Accepted",
-  "Rejected",
-];
-
-const PRIORITY_OPTIONS = ["high", "medium"];
-
-function getStatusBadgeClasses(status) {
-  switch (status) {
-    case "Not Started":
-      return "border border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300";
-    case "In Progress":
-      return "border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300";
-    case "Submitted":
-      return "border border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-300";
-    case "Accepted":
-      return "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-300";
-    case "Rejected":
-      return "border border-red-200 bg-red-50 text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300";
-    default:
-      return "border border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300";
-  }
-}
-
-function getPriorityClasses(priority) {
-  switch (priority) {
-    case "high":
-      return "bg-red-100 text-red-700 dark:bg-red-950/20 dark:text-red-300";
-    case "medium":
-      return "bg-amber-100 text-amber-700 dark:bg-amber-950/20 dark:text-amber-300";
-    default:
-      return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
-  }
 }
 
 function calculateProgress(checklist = []) {
@@ -524,22 +488,7 @@ export default function Tracker() {
 
   return (
     <div className="space-y-6 bg-slate-50 px-8 pt-8 pb-4 dark:bg-slate-950">
-      <div className="px-2 pt-2 pb-1">
-        <div className="flex items-start gap-3">
-          <CalendarCheck2 className="mt-1 h-10 w-10 text-emerald-600" />
-
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              Application Tracker
-            </h1>
-
-            <p className="mt-3 max-w-4xl text-lg leading-relaxed text-slate-600 dark:text-slate-400">
-              Stay on top of your application deadlines and required documents.
-              Track what&apos;s completed and what needs attention.
-            </p>
-          </div>
-        </div>
-      </div>
+      <TrackerHeader />
 
       <div className="mt-8 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
         <div className="flex items-center justify-between gap-6">
@@ -639,198 +588,31 @@ export default function Tracker() {
             const isExpanded = expandedId === app.application_id;
 
             return (
-              <div
+              <ApplicationCard
                 key={app.application_id}
-                ref={(el) => {
-                  if (el) {
-                    appRefs.current[String(app.application_id)] = el;
-                  }
-                }}
-                className={`rounded-2xl p-4 shadow-sm ring-1 dark:bg-slate-900 ${getDeadlineCardClasses(
-                  app.deadline
-                )}`}
+                app={app}
+                isExpanded={isExpanded}
+                progress={progress}
+                onToggleExpanded={() =>
+                  setExpandedId((prev) =>
+                    prev === app.application_id ? null : app.application_id
+                  )
+                }
+                className={getDeadlineCardClasses(app.deadline)}
               >
-                <button
-                  type="button"
-                  onClick={() =>
-                    setExpandedId((prev) =>
-                      prev === app.application_id ? null : app.application_id
-                    )
-                  }
-                  className="flex w-full items-center justify-between gap-3 text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50">
-                      <FileText className="h-6 w-6 text-emerald-600" />
-                    </div>
-
-                    <div>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{app.name}</h2>
-
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusBadgeClasses(
-                            app.status
-                          )}`}
-                        >
-                          {app.status}
-                        </span>
-                      </div>
-
-                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                        {app.program} • Deadline:{" "}
-                        {app.deadline
-                          ? new Date(app.deadline).toLocaleDateString(undefined, {
-                              month: "short",
-                              day: "numeric",
-                            })
-                          : "N/A"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-32">
-                        <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                          <div
-                            className="h-full rounded-full bg-amber-600 transition-all"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      <span className="min-w-[40px] text-right text-sm font-medium text-slate-800 dark:text-slate-200">
-                        {progress}%
-                      </span>
-                    </div>
-
-                    <span className="text-xl leading-none text-slate-500 dark:text-slate-400">
-                      {isExpanded ? "⌃" : "⌄"}
-                    </span>
-                  </div>
-                </button>
-
-                {isExpanded && (
-                  <div className="mt-6 space-y-4">
-                    {checklist.length > 0 ? (
-                      <div>
-                        <h3 className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-200">
-                          Document Checklist
-                        </h3>
-
-                        <div className="space-y-2">
-                          {checklist.map((item, index) => {
-                            return (
-                              <div
-                                key={`${app.application_id}-${index}`}
-                                draggable={!item.completed}
-                                onDragStart={(e) =>
-                                  handleDragStart(e, app.application_id, index, item)
-                                }
-                                onDragOver={handleDragOver}
-                                onDrop={(e) => handleDrop(e, app.application_id, index, item)}
-                                className={`flex items-center justify-between gap-4 rounded-2xl border px-4 py-4 transition ${
-                                  item.completed
-                                    ? "border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800"
-                                    : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
-                                }`}
-                              >
-                                <div className="flex min-w-0 items-center gap-4">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      toggleChecklistItem(app.application_id, index)
-                                    }
-                                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition ${
-                                      item.completed
-                                        ? "border-emerald-600 bg-emerald-600 text-white"
-                                        : "border-slate-300 bg-white text-transparent hover:border-slate-400 dark:border-slate-600 dark:bg-slate-900"
-                                    }`}
-                                  >
-                                    ✓
-                                  </button>
-
-                                  <span
-                                    id={getChecklistItemAnchorId(
-                                      app.application_id,
-                                      item.label
-                                    )}
-                                    className={`text-lg ${
-                                      item.completed
-                                        ? "text-slate-400 line-through dark:text-slate-500"
-                                        : "font-medium text-slate-900 dark:text-slate-100"
-                                    }`}
-                                  >
-                                    {item.label}
-                                  </span>
-                                </div>
-
-                                <div className="flex shrink-0 items-center gap-3">
-                                  {!item.completed && (
-                                    <>
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          changeChecklistPriority(
-                                            app.application_id,
-                                            index,
-                                            item.priority === "high"
-                                              ? "medium"
-                                              : "high"
-                                          )
-                                        }
-                                        className={`rounded-full border px-4 py-1.5 text-sm font-semibold transition ${
-                                          (item.priority || "medium") === "high"
-                                            ? "border-red-200 bg-red-50 text-red-600"
-                                            : "border-amber-200 bg-amber-50 text-amber-700"
-                                        }`}
-                                      >
-                                        {item.priority === "high" ? "high" : "medium"}
-                                      </button>
-                                    </>
-                                  )}
-
-                                  {item.completed && (
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-emerald-600 text-emerald-600">
-                                      ✓
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-slate-500">No checklist available.</p>
-                    )}
-
-                    <div className="flex flex-col gap-3 md:w-56">
-                      <select
-                        value={app.status}
-                        onChange={(e) =>
-                          handleStatusChange(app.application_id, e.target.value)
-                        }
-                        className="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500"
-                      >
-                        {STATUS_OPTIONS.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </select>
-
-                      <button
-                        onClick={() => handleDelete(app.application_id)}
-                        className="rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
-                      >
-                        Delete Application
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                <ChecklistPanel
+                  applicationId={app.application_id}
+                  checklist={checklist}
+                  getChecklistItemAnchorId={getChecklistItemAnchorId}
+                  onToggleChecklistItem={toggleChecklistItem}
+                  onChangeChecklistPriority={changeChecklistPriority}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onStatusChange={handleStatusChange}
+                  onDelete={handleDelete}
+                />
+              </ApplicationCard>
             );
           })}
         </div>
