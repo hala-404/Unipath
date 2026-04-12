@@ -4,29 +4,15 @@ import {
   ArrowLeft,
   CalendarClock,
   CheckCircle2,
-  CirclePlus,
   FileText,
-  Globe,
-  GraduationCap,
   MapPin,
-  MessageCircle,
   ShieldCheck,
-  Trophy,
-  Users,
-  DollarSign,
-  Clock3,
-  ExternalLink,
 } from "lucide-react";
+import ActionCard from "../components/university-details/ActionCard";
+import ProgramDetailsSection from "../components/university-details/ProgramDetailsSection";
+import QuickOverviewCard from "../components/university-details/QuickOverviewCard";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5050";
-
-function formatTuition(university) {
-  const value = university.tuition_fee;
-  if (value == null || value === "") return "N/A";
-  if (typeof value === "string" && value.trim()) return value;
-  if (Number(value) === 0) return "Free";
-  return `$${Number(value).toLocaleString()}`;
-}
 
 function formatDeadline(deadline) {
   if (!deadline) return "N/A";
@@ -342,80 +328,7 @@ export default function UniversityDetails() {
 
         <div className="mt-10 grid gap-8 xl:grid-cols-[1.9fr_0.9fr]">
           <div className="space-y-8">
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="mb-6 flex items-center gap-3">
-                <GraduationCap className="h-7 w-7 text-emerald-600" />
-                <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                  Program Details
-                </h2>
-              </div>
-
-              <div className="grid gap-5 md:grid-cols-2">
-                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6 dark:bg-slate-800">
-                  <div className="mb-2 flex items-center gap-3 text-slate-500 dark:text-slate-400">
-                    <GraduationCap className="h-5 w-5 text-emerald-600" />
-                    <span className="text-sm md:text-base">Program</span>
-                  </div>
-                  <p className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100">
-                    {university.program || "N/A"}
-                  </p>
-                </div>
-
-                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6 dark:bg-slate-800">
-                  <div className="mb-2 flex items-center gap-3 text-slate-500 dark:text-slate-400">
-                    <Globe className="h-5 w-5 text-emerald-600" />
-                    <span className="text-sm md:text-base">Language</span>
-                  </div>
-                  <p className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100">
-                    {university.language || "N/A"}
-                  </p>
-                </div>
-
-                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6 dark:bg-slate-800">
-                  <div className="mb-2 flex items-center gap-3 text-slate-500 dark:text-slate-400">
-                    <DollarSign className="h-5 w-5 text-emerald-600" />
-                    <span className="text-sm md:text-base">Tuition (per year)</span>
-                  </div>
-                  <p className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100">
-                    {formatTuition(university)}
-                  </p>
-                </div>
-
-                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6 dark:bg-slate-800">
-                  <div className="mb-2 flex items-center gap-3 text-slate-500 dark:text-slate-400">
-                    <Trophy className="h-5 w-5 text-emerald-600" />
-                    <span className="text-sm md:text-base">Minimum GPA</span>
-                  </div>
-                  <p className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100">
-                    {university.min_gpa ?? "N/A"}
-                  </p>
-                </div>
-
-                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6 dark:bg-slate-800">
-                  <div className="mb-2 flex items-center gap-3 text-slate-500 dark:text-slate-400">
-                    <Users className="h-5 w-5 text-emerald-600" />
-                    <span className="text-sm md:text-base">Acceptance Rate</span>
-                  </div>
-                  <p className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100">
-                    {university.acceptance_rate != null
-                      ? `${university.acceptance_rate}%`
-                      : "N/A"}
-                  </p>
-                </div>
-
-                <div className="rounded-[22px] bg-slate-50 p-5 md:p-6 dark:bg-slate-800">
-                  <div className="mb-2 flex items-center gap-3 text-slate-500 dark:text-slate-400">
-                    <Trophy className="h-5 w-5 text-emerald-600" />
-                    <span className="text-sm md:text-base">World Ranking</span>
-                  </div>
-                  <p className="text-lg md:text-xl font-semibold text-slate-900 dark:text-slate-100">
-                    {university.world_ranking != null
-                      ? `#${university.world_ranking}`
-                      : "N/A"}
-                  </p>
-                </div>
-              </div>
-            </section>
+            <ProgramDetailsSection university={university} />
 
             <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mb-3 flex items-center gap-3">
@@ -470,58 +383,15 @@ export default function UniversityDetails() {
           </div>
 
           <aside className="space-y-8">
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <h2 className="mb-8 text-xl md:text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                Actions
-              </h2>
-
-              <div className="space-y-4">
-                {university.website_url ? (
-                  <a
-                    href={university.website_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex w-full items-center justify-center gap-3 rounded-[18px] bg-emerald-600 px-5 py-4 text-sm md:text-base font-medium text-white transition hover:bg-emerald-500"
-                  >
-                    <ExternalLink className="h-5 w-5" />
-                    Apply Now
-                  </a>
-                ) : (
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-center gap-3 rounded-[18px] bg-emerald-600 px-5 py-4 text-sm md:text-base font-medium text-white opacity-70"
-                  >
-                    <ExternalLink className="h-5 w-5" />
-                    Apply Now
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={handleAddToTracker}
-                  disabled={trackerLoading || alreadyAdded}
-                  className="flex w-full items-center justify-center gap-3 rounded-[18px] border border-slate-200 bg-white px-5 py-4 text-sm md:text-base font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
-                >
-                  <CirclePlus className="h-5 w-5" />
-                  {alreadyAdded ? "Added" : trackerLoading ? "Adding..." : "Add to Tracker"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleAskAI}
-                  className="flex w-full items-center justify-center gap-3 rounded-[18px] border border-slate-200 bg-white px-5 py-4 text-sm md:text-base font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  Ask AI About This University
-                </button>
-
-                {trackerMessage && (
-                  <p className={`mt-2 text-sm ${trackerError ? "text-red-600" : "text-green-600"}`}>
-                    {trackerMessage}
-                  </p>
-                )}
-              </div>
-            </section>
+            <ActionCard
+              websiteUrl={university.website_url}
+              onAddToTracker={handleAddToTracker}
+              onAskAI={handleAskAI}
+              trackerLoading={trackerLoading}
+              alreadyAdded={alreadyAdded}
+              trackerMessage={trackerMessage}
+              trackerError={trackerError}
+            />
 
             <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mb-6 flex items-center gap-3">
@@ -567,31 +437,11 @@ export default function UniversityDetails() {
               </div>
             </section>
 
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 md:p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="mb-4 flex items-center gap-3">
-                <Clock3 className="h-7 w-7 text-emerald-600" />
-                <h2 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-slate-100">
-                  Quick Overview
-                </h2>
-              </div>
-
-              <div className="space-y-4 text-base md:text-lg text-slate-700 dark:text-slate-300">
-                <div className="flex items-center justify-between rounded-[18px] bg-slate-50 px-5 py-4 dark:bg-slate-800">
-                  <span>Fit Score</span>
-                  <span className="font-semibold text-emerald-700 dark:text-emerald-300">{fitScore}%</span>
-                </div>
-
-                <div className="flex items-center justify-between rounded-[18px] bg-slate-50 px-5 py-4 dark:bg-slate-800">
-                  <span>Language</span>
-                  <span className="font-semibold">{university.language || "N/A"}</span>
-                </div>
-
-                <div className="flex items-center justify-between rounded-[18px] bg-slate-50 px-5 py-4 dark:bg-slate-800">
-                  <span>Minimum GPA</span>
-                  <span className="font-semibold">{university.min_gpa ?? "N/A"}</span>
-                </div>
-              </div>
-            </section>
+            <QuickOverviewCard
+              fitScore={fitScore}
+              language={university.language}
+              minGpa={university.min_gpa}
+            />
           </aside>
         </div>
       </div>

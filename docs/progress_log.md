@@ -258,6 +258,12 @@ PORT
 
 DB_HOST
 
+8. AI Provider Notes
+
+The current chatbot implementation uses OpenRouter as the inference gateway with a Llama-based model.
+
+Earlier provider experiments were removed to keep the final prototype consistent and easy to explain during defense.
+
 DB_PORT
 
 DB_NAME
