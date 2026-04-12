@@ -17,6 +17,7 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
+    "test": "NODE_ENV=test jest --runInBand",
     "populate:images": "node scripts/populateUniversityImages.js",
     "cloudinary:get-images": "node scripts/getImages.js"
   },
@@ -25,6 +26,8 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "jest": "^30.3.0",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
   }
 }

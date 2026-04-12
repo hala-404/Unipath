@@ -18,6 +18,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5050";
+
 function formatTuition(university) {
   const value = university.tuition_fee;
   if (value == null || value === "") return "N/A";
@@ -118,6 +120,14 @@ export default function UniversityDetails() {
 
   const [university, setUniversity] = useState(state?.university || null);
   const [loading, setLoading] = useState(!state?.university);
+  const [trackerLoading, setTrackerLoading] = useState(false);
+  const [trackerMessage, setTrackerMessage] = useState("");
+  const [alreadyAdded, setAlreadyAdded] = useState(false);
+  const [trackerError, setTrackerError] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   useEffect(() => {
     async function loadUniversity() {
@@ -127,7 +137,7 @@ export default function UniversityDetails() {
       }
 
       try {
-        const response = await fetch(`http://localhost:5050/universities/${id}`);
+        const response = await fetch(`${API_BASE}/universities/${id}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -197,6 +207,60 @@ export default function UniversityDetails() {
 
   const fitScore = university.fit_score ?? university.score ?? 0;
   const risk = university.risk || "Match";
+
+  const handleAddToTracker = async () => {
+    if (trackerLoading || alreadyAdded) return;
+
+    try {
+      setTrackerLoading(true);
+      setTrackerMessage("");
+      setTrackerError(false);
+
+      const url = `${API_BASE}/applications`;
+
+      console.log("FINAL URL =", url);
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          university_id: university.id,
+          status: "Not Started",
+        }),
+      });
+
+      const text = await res.text();
+      let data;
+
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Server returned non-JSON response: ${text}`);
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to add university to tracker");
+      }
+
+      setAlreadyAdded(true);
+      setTrackerMessage("Added to tracker.");
+    } catch (error) {
+      setTrackerError(true);
+      setTrackerMessage(error.message || "Something went wrong.");
+    } finally {
+      setTrackerLoading(false);
+    }
+  };
+
+  const handleAskAI = () => {
+    navigate("/chat", {
+      state: {
+        starterMessage: `Can you tell me about ${university.name}, its programs, requirements, and whether it matches my profile?`,
+      },
+    });
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 px-6 py-8 text-slate-900 dark:bg-slate-950 dark:text-slate-100 md:px-10">
@@ -434,19 +498,28 @@ export default function UniversityDetails() {
 
                 <button
                   type="button"
-                  className="flex w-full items-center justify-center gap-3 rounded-[18px] border border-slate-200 bg-white px-5 py-4 text-sm md:text-base font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
+                  onClick={handleAddToTracker}
+                  disabled={trackerLoading || alreadyAdded}
+                  className="flex w-full items-center justify-center gap-3 rounded-[18px] border border-slate-200 bg-white px-5 py-4 text-sm md:text-base font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   <CirclePlus className="h-5 w-5" />
-                  Add to Tracker
+                  {alreadyAdded ? "Added" : trackerLoading ? "Adding..." : "Add to Tracker"}
                 </button>
 
                 <button
                   type="button"
+                  onClick={handleAskAI}
                   className="flex w-full items-center justify-center gap-3 rounded-[18px] border border-slate-200 bg-white px-5 py-4 text-sm md:text-base font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   <MessageCircle className="h-5 w-5" />
                   Ask AI About This University
                 </button>
+
+                {trackerMessage && (
+                  <p className={`mt-2 text-sm ${trackerError ? "text-red-600" : "text-green-600"}`}>
+                    {trackerMessage}
+                  </p>
+                )}
               </div>
             </section>
 

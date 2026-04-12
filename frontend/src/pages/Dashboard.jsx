@@ -16,6 +16,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5050";
+
 function formatTimeAgo(dateString) {
   const date = new Date(dateString);
   const now = new Date();
@@ -95,7 +97,7 @@ export default function Dashboard() {
       try {
         const token = await getToken();
 
-        const response = await fetch("http://localhost:5050/dashboard", {
+        const response = await fetch(`${API_BASE}/dashboard`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
