@@ -8,6 +8,7 @@ const { chatWithAdvisor, getChatSuggestions } = require("../controllers/chat.con
 const chatLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
+  message: { error: "Too many chat requests, please try again later." },
 });
 
 router.get("/suggestions", requireAuth(), getChatSuggestions);
