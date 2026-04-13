@@ -1,8 +1,9 @@
 const path = require("path");
 const dotenv = require("dotenv");
-const pool = require("../db/pool");
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
+const pool = require("../db/pool");
 
 const wikiTitleOverrides = {
   // Add manual title overrides here when needed.
