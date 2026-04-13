@@ -96,19 +96,14 @@ export default function Profile() {
 
       const result = await updateProfile(
         {
-          full_name: formData.full_name.trim() === "" ? null : formData.full_name.trim(),
-          gpa: formData.gpa === "" ? null : Number(formData.gpa),
-          preferred_city:
-            formData.preferred_city.trim() === "" ? null : formData.preferred_city.trim(),
-          preferred_country:
-            formData.preferred_country.trim() === "" ? null : formData.preferred_country.trim(),
-          preferred_program:
-            formData.preferred_program.trim() === "" ? null : formData.preferred_program.trim(),
-          preferred_language:
-            formData.preferred_language.trim() === "" ? null : formData.preferred_language.trim(),
-          max_tuition:
-            formData.max_tuition === "" ? null : Number(formData.max_tuition),
-          reminders_enabled: formData.reminders_enabled,
+          full_name: formData.full_name,
+          gpa: formData.gpa === "" ? undefined : Number(formData.gpa),
+          preferred_country: formData.preferred_country,
+          preferred_city: formData.preferred_city,
+          preferred_program: formData.preferred_program,
+          preferred_language: formData.preferred_language,
+          max_tuition: formData.max_tuition === "" ? undefined : Number(formData.max_tuition),
+          reminders_enabled: Boolean(formData.reminders_enabled),
         },
         token
       );

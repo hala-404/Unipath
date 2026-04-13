@@ -4,11 +4,15 @@ const { logActivity } = require("../utils/logActivity");
 const { z } = require("zod");
 
 const profileSchema = z.object({
+  full_name: z.string().max(100).optional().or(z.literal("")),
   gpa: z.number().min(0).max(4).optional(),
-  preferred_city: z.string().max(100).optional(),
-  preferred_program: z.string().max(100).optional(),
-  preferred_language: z.string().max(50).optional(),
-}).passthrough();
+  preferred_city: z.string().max(100).optional().or(z.literal("")),
+  preferred_country: z.string().max(100).optional().or(z.literal("")),
+  preferred_program: z.string().max(100).optional().or(z.literal("")),
+  preferred_language: z.string().max(50).optional().or(z.literal("")),
+  max_tuition: z.number().min(0).optional(),
+  reminders_enabled: z.boolean().optional(),
+});
 
 async function getProfile(req, res) {
   try {
