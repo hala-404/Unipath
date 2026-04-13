@@ -62,6 +62,31 @@ export default function Profile() {
     }));
   }
 
+  function calculateProfileCompletion(profile) {
+    const fields = [
+      profile.full_name,
+      profile.gpa,
+      profile.preferred_country,
+      profile.preferred_city,
+      profile.preferred_program,
+      profile.preferred_language,
+      profile.max_tuition,
+    ];
+
+    const completedCount = fields.filter((value) => {
+      if (value === null || value === undefined) return false;
+
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        return trimmed !== "" && trimmed.toLowerCase() !== "any";
+      }
+
+      return true;
+    }).length;
+
+    return Math.round((completedCount / fields.length) * 100);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
@@ -131,6 +156,8 @@ export default function Profile() {
     return <div className="min-h-screen bg-slate-50 p-8 text-slate-700 dark:bg-slate-950 dark:text-slate-400">Loading profile...</div>;
   }
 
+  const completion = calculateProfileCompletion(formData);
+
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900 dark:bg-slate-950 dark:text-slate-100 md:px-6">
       <div className="mx-auto max-w-5xl space-y-6">
@@ -149,14 +176,16 @@ export default function Profile() {
             <div className="flex-1">
               <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Profile Completion</h2>
               <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                <div className="h-full w-[100%] rounded-full bg-emerald-600" />
+                <div className={`h-full rounded-full bg-emerald-600 transition-all`} style={{ width: `${completion}%` }} />
               </div>
               <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                Your profile is complete. You&apos;ll get the best recommendations.
+                {completion === 100
+                  ? "Your profile is complete. You'll get the best recommendations."
+                  : "Complete more fields to get more accurate recommendations."}
               </p>
             </div>
             <div className="text-right">
-              <div className="text-4xl font-bold text-emerald-600">100%</div>
+              <div className="text-4xl font-bold text-emerald-600">{completion}%</div>
               <div className="text-sm text-slate-500 dark:text-slate-400">complete</div>
             </div>
           </div>
