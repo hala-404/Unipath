@@ -34,17 +34,17 @@ UNIPATH helps students discover universities that fit their academic profile, tr
 - Node.js + Express
 - PostgreSQL (via `pg` connection pool)
 - Clerk SDK for Express (`@clerk/express`)
-- Axios (for LLM API calls)
+- Native `fetch` (for LLM API calls)
 - Cloudinary (image hosting for university photos)
 - Node-cron / scheduled jobs (deadline reminders)
-- Nodemailer (email service)
+- Resend (transactional email service)
 
 **AI / LLM**
 - OpenRouter API
 - Model: `meta-llama/llama-3-8b-instruct`
 
 **Testing**
-- Smoke tests for `/health` and `/universities` endpoints
+- Jest + Supertest (endpoint and unit tests with coverage)
 
 ---
 
