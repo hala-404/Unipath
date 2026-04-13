@@ -134,7 +134,7 @@ async function getDashboardData(req, res) {
     );
 
     const activityResult = await pool.query(
-      `SELECT id, action, entity, entity_name, created_at
+      `SELECT id, action, entity_type AS entity, entity_name, created_at
        FROM activity_logs
        WHERE user_id = $1
        ORDER BY created_at DESC
