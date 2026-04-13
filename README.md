@@ -18,7 +18,7 @@ UNIPATH helps students discover universities that fit their academic profile, tr
 - 👤 **Student profile** — persisted academic profile that feeds both recommendations and the advisor.
 - 📊 **Dashboard** — overview of saved universities, tracked applications, and upcoming deadlines.
 - ⏰ **Deadline reminders** — scheduled email reminders via a background job.
-- 🔐 **Authentication** — handled via Clerk, with a local demo mode that can run without auth wiring.
+- 🔐 **Authentication** — handled via Clerk for secure user sessions.
 
 ---
 
@@ -27,7 +27,7 @@ UNIPATH helps students discover universities that fit their academic profile, tr
 **Frontend**
 - React 18 + Vite
 - Tailwind CSS
-- Clerk (authentication, optional in local demo mode)
+- Clerk (authentication)
 - ESLint
 
 **Backend**
@@ -150,6 +150,7 @@ cd Unipath
 createdb unipath_db
 
 # Run migrations
+psql unipath_db -f backend/db/migrations/000_init_schema.sql
 psql unipath_db -f backend/db/migrations/001_add_profile_columns.sql
 
 # Load seed universities
@@ -217,30 +218,28 @@ npm run dev
 
 The app will be available at `http://localhost:5173` (default Vite port).
 
-### Demo mode note
-
-The current local setup is intentionally relaxed so the app can run end to end without Clerk middleware. If you want strict auth gating, restore the Clerk middleware and route protections in the backend and provide the Clerk environment variables.
-
 ---
 
 ## API Overview
 
-| Method | Endpoint              | Purpose                                  |
-|--------|-----------------------|------------------------------------------|
-| GET    | `/health`             | Health check                             |
-| GET    | `/universities`       | List/filter universities                 |
-| GET    | `/universities/:id`   | University details                       |
-| GET    | `/profile`            | Get current user's profile               |
-| PUT    | `/profile`            | Update profile                           |
-| GET    | `/recommendations`    | Personalized university recommendations  |
-| GET    | `/tracker`            | List tracked applications                |
-| POST   | `/tracker`            | Add application to tracker               |
-| PATCH  | `/tracker/:id`        | Update tracked application               |
-| DELETE | `/tracker/:id`        | Remove from tracker                      |
-| GET    | `/dashboard`          | Dashboard summary                        |
-| POST   | `/chat`               | Send a message to the AI advisor         |
+| Method | Endpoint                       | Purpose                                  |
+|--------|--------------------------------|------------------------------------------|
+| GET    | `/health`                      | Health check                             |
+| GET    | `/universities`                | List/filter universities                 |
+| GET    | `/universities/:id`            | University details                       |
+| GET    | `/universities/recommendations`| Personalized recommendations             |
+| GET    | `/profile`                     | Get current user's profile               |
+| PUT    | `/profile`                     | Update profile                           |
+| GET    | `/applications`                | List tracked applications                |
+| POST   | `/applications`                | Add application to tracker               |
+| PUT    | `/applications/:id`            | Update application status                |
+| PUT    | `/applications/:id/checklist`  | Update application checklist             |
+| DELETE | `/applications/:id`            | Remove application                       |
+| GET    | `/dashboard`                   | Dashboard summary                        |
+| GET    | `/api/chat/suggestions`        | Get chat suggestions                     |
+| POST   | `/api/chat`                    | Send a message to the AI advisor         |
 
-> Routes are defined in `backend/routes/`. In the current local demo setup, auth is relaxed so the app can be exercised on localhost without Clerk.
+> Routes are defined in `backend/routes/`. Protected routes require a valid Clerk-authenticated session in normal runtime configuration.
 
 ---
 

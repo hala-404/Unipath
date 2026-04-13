@@ -1,97 +1,66 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
-export async function fetchApplications() {
-  const response = await fetch(`${API_URL}/applications`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
+async function makeRequest(endpoint, options = {}, token) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}${endpoint}`, {
     credentials: "include",
+    ...options,
+    headers,
   });
 
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    const text = await response.text();
+    throw new Error(text || "Invalid server response");
+  }
 
   if (!response.ok) {
-    throw new Error(data.error || "Failed to load applications");
+    throw new Error(data?.error || "Request failed");
   }
 
   return data;
 }
 
-export async function updateApplicationStatus(applicationId, status) {
-  const response = await fetch(`${API_URL}/applications/${applicationId}`, {
+export async function fetchApplications(token) {
+  return makeRequest("/applications", { method: "GET" }, token);
+}
+
+export async function updateApplicationStatus(applicationId, status, token) {
+  return makeRequest(`/applications/${applicationId}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
     body: JSON.stringify({ status }),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || "Failed to update application");
-  }
-
-  return data;
+  }, token);
 }
 
-export async function updateApplicationChecklist(applicationId, checklist) {
-  const response = await fetch(`${API_URL}/applications/${applicationId}/checklist`, {
+export async function updateApplicationChecklist(applicationId, checklist, token) {
+  return makeRequest(`/applications/${applicationId}/checklist`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
     body: JSON.stringify({ checklist }),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || "Failed to update checklist");
-  }
-
-  return data;
+  }, token);
 }
 
-export async function deleteApplication(applicationId) {
-  const response = await fetch(`${API_URL}/applications/${applicationId}`, {
+export async function deleteApplication(applicationId, token) {
+  return makeRequest(`/applications/${applicationId}`, {
     method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || "Failed to delete application");
-  }
-
-  return data;
+  }, token);
 }
 
-export async function addApplication(universityId) {
-  const response = await fetch(`${API_URL}/applications`, {
+export async function addApplication(universityId, token) {
+  return makeRequest("/applications", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
     body: JSON.stringify({
       university_id: universityId,
       status: "Not Started",
     }),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error || "Failed to add application");
-  }
-
-  return data;
+  }, token);
 }

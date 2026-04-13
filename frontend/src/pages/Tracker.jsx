@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "@clerk/react";
 import { useLocation } from "react-router-dom";
 import TrackerHeader from "../components/tracker/TrackerHeader";
 import ApplicationCard from "../components/tracker/ApplicationCard";
@@ -8,6 +9,7 @@ import {
   updateApplicationChecklist,
   deleteApplication,
 } from "../api/tracker";
+import { fetchProfile } from "../api/profile";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5050";
 
@@ -21,26 +23,38 @@ function getDeadlineStatus(deadline) {
   if (diffDays < 0) return { text: "Deadline passed", color: "text-red-500" };
   if (diffDays === 0) return { text: "Due today", color: "text-orange-400" };
   if (diffDays <= 7) {
-    return { text: `${diffDays} ${diffDays === 1 ? "day" : "days"} left`, color: "text-yellow-400" };
+    return {
+      text: `${diffDays} ${diffDays === 1 ? "day" : "days"} left`,
+      color: "text-yellow-400",
+    };
   }
 
-  return { text: `${diffDays} ${diffDays === 1 ? "day" : "days"} left`, color: "text-green-400" };
+  return {
+    text: `${diffDays} ${diffDays === 1 ? "day" : "days"} left`,
+    color: "text-green-400",
+  };
 }
 
 function getDeadlineCardClasses(deadline) {
-  if (!deadline) return "ring-slate-200 dark:ring-slate-800 bg-white dark:bg-slate-900";
+  if (!deadline) {
+    return "ring-slate-200 dark:ring-slate-800 bg-white dark:bg-slate-900";
+  }
 
   const now = new Date();
   const ddl = new Date(deadline);
   const diffDays = Math.ceil((ddl - now) / (1000 * 60 * 60 * 24));
 
-  if (diffDays < 0) return "ring-red-300 bg-red-50 dark:ring-red-900/50 dark:bg-red-950/20";
-  if (diffDays <= 7) return "ring-yellow-300 bg-yellow-50 dark:ring-yellow-900/50 dark:bg-yellow-950/20";
+  if (diffDays < 0) {
+    return "ring-red-300 bg-red-50 dark:ring-red-900/50 dark:bg-red-950/20";
+  }
+  if (diffDays <= 7) {
+    return "ring-yellow-300 bg-yellow-50 dark:ring-yellow-900/50 dark:bg-yellow-950/20";
+  }
   return "ring-slate-200 bg-white dark:ring-slate-800 dark:bg-slate-900";
 }
 
 function calculateProgress(checklist = []) {
-  if (!checklist.length) return 0;
+  if (!Array.isArray(checklist) || !checklist.length) return 0;
   const doneCount = checklist.filter((item) => item.completed).length;
   return Math.round((doneCount / checklist.length) * 100);
 }
@@ -71,7 +85,20 @@ function getOverallChecklistStats(applications) {
   return { completed, total, remaining, percent };
 }
 
+async function parseJsonSafely(res) {
+  const text = await res.text();
+
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(text || "Invalid server response");
+  }
+}
+
 export default function Tracker() {
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const location = useLocation();
   const appRefs = useRef({});
 
@@ -88,12 +115,27 @@ export default function Tracker() {
 
   useEffect(() => {
     async function loadApplications() {
+      if (!isLoaded) return;
+
+      if (!isSignedIn) {
+        setApplications([]);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError("");
 
-        const res = await fetch(`${API_BASE}/applications`);
-        const data = await res.json();
+        const token = await getToken();
+
+        const res = await fetch(`${API_BASE}/applications`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await parseJsonSafely(res);
 
         if (!res.ok) {
           throw new Error(data.error || "Failed to load applications");
@@ -119,12 +161,30 @@ export default function Tracker() {
     }
 
     loadApplications();
-  }, []);
+  }, [getToken, isLoaded, isSignedIn]);
+
+  useEffect(() => {
+    async function loadProfileReminders() {
+      if (!isLoaded || !isSignedIn) return;
+
+      try {
+        const token = await getToken();
+        const data = await fetchProfile(token);
+        setRemindersEnabled(data.reminders_enabled ?? true);
+      } catch {
+        // Keep default state.
+      }
+    }
+
+    loadProfileReminders();
+  }, [getToken, isLoaded, isSignedIn]);
 
   useEffect(() => {
     if (!targetAppId) return;
 
-    const exists = applications.some((app) => String(app.application_id) === String(targetAppId));
+    const exists = applications.some(
+      (app) => String(app.application_id) === String(targetAppId)
+    );
     if (!exists) return;
 
     setExpandedId(Number.isNaN(Number(targetAppId)) ? targetAppId : Number(targetAppId));
@@ -187,11 +247,18 @@ export default function Tracker() {
   };
 
   async function saveChecklist(applicationId, updatedChecklist) {
-    const updated = await updateApplicationChecklist(applicationId, updatedChecklist);
+    const token = await getToken();
+    const updated = await updateApplicationChecklist(
+      applicationId,
+      updatedChecklist,
+      token
+    );
 
     setApplications((prev) =>
       prev.map((app) =>
-        app.application_id === applicationId ? { ...app, checklist: updated.checklist } : app
+        app.application_id === applicationId
+          ? { ...app, checklist: updated.checklist }
+          : app
       )
     );
   }
@@ -201,11 +268,14 @@ export default function Tracker() {
     setError("");
 
     try {
-      await updateApplicationStatus(applicationId, newStatus);
+      const token = await getToken();
+      await updateApplicationStatus(applicationId, newStatus, token);
 
       setApplications((prev) =>
         prev.map((app) =>
-          app.application_id === applicationId ? { ...app, status: newStatus } : app
+          app.application_id === applicationId
+            ? { ...app, status: newStatus }
+            : app
         )
       );
 
@@ -220,9 +290,12 @@ export default function Tracker() {
     setError("");
 
     try {
-      await deleteApplication(applicationId);
+      const token = await getToken();
+      await deleteApplication(applicationId, token);
 
-      setApplications((prev) => prev.filter((app) => app.application_id !== applicationId));
+      setApplications((prev) =>
+        prev.filter((app) => app.application_id !== applicationId)
+      );
       setMessage("Application deleted successfully.");
     } catch (err) {
       setError(err.message || "Failed to delete application");
@@ -281,33 +354,6 @@ export default function Tracker() {
     }
   }
 
-  async function moveChecklistItem(applicationId, fromIndex, toIndex) {
-    setMessage("");
-    setError("");
-
-    try {
-      const app = applications.find((item) => item.application_id === applicationId);
-      if (!app) return;
-
-      const checklist = [...getSafeChecklist(app)];
-      if (
-        fromIndex < 0 ||
-        toIndex < 0 ||
-        fromIndex >= checklist.length ||
-        toIndex >= checklist.length
-      ) {
-        return;
-      }
-
-      const [movedItem] = checklist.splice(fromIndex, 1);
-      checklist.splice(toIndex, 0, movedItem);
-
-      await saveChecklist(applicationId, checklist);
-    } catch (err) {
-      setError(err.message || "Failed to reorder checklist");
-    }
-  }
-
   function handleDragStart(e, applicationId, itemIndex, item) {
     if (item.completed) {
       e.preventDefault();
@@ -345,7 +391,9 @@ export default function Tracker() {
       const fromUnfinishedIndex = unfinishedIndexes.findIndex(
         ({ index }) => index === sourceIndex
       );
-      const toUnfinishedIndex = unfinishedIndexes.findIndex(({ index }) => index === targetIndex);
+      const toUnfinishedIndex = unfinishedIndexes.findIndex(
+        ({ index }) => index === targetIndex
+      );
 
       if (fromUnfinishedIndex === -1 || toUnfinishedIndex === -1) return;
 
@@ -364,36 +412,37 @@ export default function Tracker() {
   }
 
   const activeApplications = useMemo(
-    () => applications.filter((app) => app.status !== "Accepted" && app.status !== "Rejected"),
+    () =>
+      applications.filter(
+        (app) => app.status !== "Accepted" && app.status !== "Rejected"
+      ),
     [applications]
   );
-
-  const urgentApplications = useMemo(() => {
-    return activeApplications.filter((app) => {
-      if (!app.deadline) return false;
-
-      const diffDays = Math.ceil((new Date(app.deadline) - new Date()) / (1000 * 60 * 60 * 24));
-      return diffDays >= 0 && diffDays <= 7;
-    });
-  }, [activeApplications]);
 
   const passedApplications = useMemo(() => {
     return activeApplications.filter((app) => {
       if (!app.deadline) return false;
 
-      const diffDays = Math.ceil((new Date(app.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+      const diffDays = Math.ceil(
+        (new Date(app.deadline) - new Date()) / (1000 * 60 * 60 * 24)
+      );
       return diffDays < 0;
     });
   }, [activeApplications]);
 
-  const overallStats = useMemo(() => getOverallChecklistStats(applications), [applications]);
+  const overallStats = useMemo(
+    () => getOverallChecklistStats(applications),
+    [applications]
+  );
 
   const needsAttentionItems = useMemo(() => {
     return activeApplications
       .flatMap((app) => {
         if (!app.deadline) return [];
 
-        const diffDays = Math.ceil((new Date(app.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+        const diffDays = Math.ceil(
+          (new Date(app.deadline) - new Date()) / (1000 * 60 * 60 * 24)
+        );
         if (diffDays < 0 || diffDays > 30) return [];
 
         return getSafeChecklist(app)
@@ -408,7 +457,11 @@ export default function Tracker() {
   }, [activeApplications]);
 
   if (loading) {
-    return <div className="min-h-screen bg-slate-50 p-8 text-slate-700 dark:bg-slate-950 dark:text-slate-400">Loading tracker...</div>;
+    return (
+      <div className="min-h-screen bg-slate-50 p-8 text-slate-700 dark:bg-slate-950 dark:text-slate-400">
+        Loading tracker...
+      </div>
+    );
   }
 
   return (
@@ -430,7 +483,9 @@ export default function Tracker() {
       <div className="mt-8 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
         <div className="flex items-center justify-between gap-6">
           <div className="flex-1">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Overall Progress</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              Overall Progress
+            </h2>
 
             <div className="mt-5 h-4 overflow-hidden rounded-full bg-slate-200">
               <div
@@ -446,13 +501,21 @@ export default function Tracker() {
 
           <div className="flex gap-3">
             <div className="min-w-[90px] rounded-2xl bg-emerald-50 px-4 py-3 text-center dark:bg-emerald-950/30">
-              <div className="text-lg font-semibold text-emerald-700">{overallStats.completed}</div>
-              <div className="mt-1 text-base text-slate-600 dark:text-slate-400">Completed</div>
+              <div className="text-lg font-semibold text-emerald-700">
+                {overallStats.completed}
+              </div>
+              <div className="mt-1 text-base text-slate-600 dark:text-slate-400">
+                Completed
+              </div>
             </div>
 
             <div className="min-w-[90px] rounded-2xl bg-amber-50 px-4 py-3 text-center dark:bg-amber-950/30">
-              <div className="text-lg font-semibold text-amber-700">{overallStats.remaining}</div>
-              <div className="mt-1 text-base text-slate-600 dark:text-slate-400">Remaining</div>
+              <div className="text-lg font-semibold text-amber-700">
+                {overallStats.remaining}
+              </div>
+              <div className="mt-1 text-base text-slate-600 dark:text-slate-400">
+                Remaining
+              </div>
             </div>
           </div>
         </div>
@@ -462,7 +525,9 @@ export default function Tracker() {
         <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-amber-200 dark:bg-slate-900 dark:ring-amber-900/50">
           <div className="flex items-center gap-3">
             <span className="text-2xl text-amber-600">!</span>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Needs Attention</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              Needs Attention
+            </h2>
           </div>
 
           <p className="mt-3 text-base text-slate-600 dark:text-slate-400">
@@ -486,7 +551,9 @@ export default function Tracker() {
                   </div>
 
                   {deadlineStatus ? (
-                    <span className={`rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300 ${deadlineStatus.color}`}>
+                    <span
+                      className={`rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300 ${deadlineStatus.color}`}
+                    >
                       {deadlineStatus.text}
                     </span>
                   ) : null}
@@ -499,16 +566,21 @@ export default function Tracker() {
 
       {passedApplications.length > 0 ? (
         <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-red-200 dark:bg-slate-900 dark:ring-red-900/50">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Passed Deadlines</h2>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            Passed Deadlines
+          </h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            {passedApplications.length} application{passedApplications.length === 1 ? "" : "s"} need attention.
+            {passedApplications.length} application
+            {passedApplications.length === 1 ? "" : "s"} need attention.
           </p>
         </div>
       ) : null}
 
       {applications.length === 0 ? (
         <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
-          <p className="text-sm text-slate-600 dark:text-slate-400">No applications saved yet.</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            No applications saved yet.
+          </p>
         </div>
       ) : (
         <div className="grid gap-6">
@@ -538,7 +610,7 @@ export default function Tracker() {
                   <ChecklistPanel
                     applicationId={app.application_id}
                     checklist={checklist}
-                    status={app.status}
+                    status={app.status || "Not Started"}
                     getChecklistItemAnchorId={getChecklistItemAnchorId}
                     onToggleChecklistItem={toggleChecklistItem}
                     onChangeChecklistPriority={changeChecklistPriority}

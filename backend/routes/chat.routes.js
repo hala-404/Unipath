@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const rateLimit = require("express-rate-limit");
+const { requireAuth } = require("@clerk/express");
 
 const { chatWithAdvisor, getChatSuggestions } = require("../controllers/chat.controller");
 
@@ -10,7 +11,7 @@ const chatLimiter = rateLimit({
   message: { error: "Too many chat requests, please try again later." },
 });
 
-router.get("/suggestions", getChatSuggestions);
-router.post("/", chatLimiter, chatWithAdvisor);
+router.get("/suggestions", requireAuth(), getChatSuggestions);
+router.post("/", requireAuth(), chatLimiter, chatWithAdvisor);
 
 module.exports = router;

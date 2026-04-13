@@ -4,22 +4,8 @@ const { ensureLocalUser } = require("../utils/ensureLocalUser");
 const { z } = require("zod");
 
 async function resolveTrackerUserId(req) {
-  // If Clerk auth exists, use the real linked user
-  if (req.auth?.userId) {
-    const localUser = await ensureLocalUser(pool, req);
-    return localUser.id;
-  }
-
-  // Development/demo fallback: use the first local user
-  const fallbackUser = await pool.query(
-    `SELECT id FROM users ORDER BY id ASC LIMIT 1`
-  );
-
-  if (!fallbackUser.rows.length) {
-    throw { status: 500, message: "No local users found for tracker fallback" };
-  }
-
-  return fallbackUser.rows[0].id;
+  const localUser = await ensureLocalUser(pool, req);
+  return localUser.id;
 }
 
 const defaultChecklist = [

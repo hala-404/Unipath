@@ -21,7 +21,7 @@ export default function ChecklistPanel({
 }) {
   return (
     <>
-      {checklist.length > 0 ? (
+      {Array.isArray(checklist) && checklist.length > 0 ? (
         <div>
           <h3 className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-200">
             Document Checklist
