@@ -12,7 +12,7 @@ UNIPATH helps students discover universities that fit their academic profile, tr
 
 - 🎓 **University search & filtering** — filter by GPA eligibility, city, program, and language of instruction.
 - 🤖 **AI advisor (chat)** — conversational guidance powered by an LLM, with context awareness over the chat history (tracks mentioned majors, detects when the user wants alternatives, extracts interests).
-- ⭐ **Personalized recommendations** — programs and universities matched to the student's profile (GPA, interests, preferred city, language, target program).
+- ⭐ **Rule-based recommendations** — universities matched to the student's profile using transparent matching logic based on GPA eligibility, preferred city, program, language, and budget constraints.
 - 📋 **Application tracker** — track deadlines, required documents, and application status across multiple universities.
 - 🔀 **Side-by-side comparison** — compare multiple universities on key attributes.
 - 👤 **Student profile** — persisted academic profile that feeds both recommendations and the advisor.
@@ -243,6 +243,26 @@ The app will be available at `http://localhost:5173` (default Vite port).
 
 ---
 
+## Recommendation Design
+
+The recommendation component uses a **rule-based matching approach** rather than learned models from historical user data.
+
+**How it works:**
+- Explicit matching logic across multiple attributes (GPA eligibility, preferred city, program alignment, language, and budget constraints)
+- Each recommendation includes a transparency score showing how many user preferences were matched
+- Recommendations can be explained clearly to the user (e.g., "matches your GPA", "fits your budget")
+
+**Design rationale:**
+This approach was chosen for the prototype because:
+- Small curated dataset (not sufficient for collaborative filtering)
+- Inference is deterministic and low-cost
+- Clear explanations build user trust in a prototype environment
+- Easy to iterate on matching criteria based on user feedback
+
+**Future work** could extend this with content-based similarity metrics, retrieval-based methods, or learned recommendation techniques once sufficient user interaction data becomes available.
+
+---
+
 ## Running Tests
 
 ```bash
@@ -279,11 +299,13 @@ This is an intentional design choice for the prototype: it keeps inference costs
 
 ## Known Limitations
 
-- **Small dataset.** The seed contains a curated set of universities; this is a prototype, not a production catalog.
-- **Filter-based recommendations.** Matching is rule-based (GPA threshold + city/program/language filters), not learned from data.
-- **Smoke-test coverage only.** Backend tests verify availability, not full controller behavior.
-- **No real-time data ingestion.** University information is static seed data.
-- **Email reminders require SMTP configuration** to actually send.
+- **Small curated dataset.** The seed contains approximately 50 curated universities; this is a prototype, not a production catalog.
+- **Rule-based recommendations (not learned).** Matching uses explicit attribute matching (GPA threshold + city/program/language/budget filters), rather than models trained on user interaction data. Recommendation quality depends on dataset coverage and the accuracy of user-provided preferences.
+- **Static data.** University information, rankings, and deadlines are loaded from seed data, not updated in real-time from external sources.
+- **Smoke-test coverage only.** Backend tests verify endpoint availability and basic logic, not full controller behavior and edge cases.
+- **Email reminders require SMTP configuration** to actually send notifications.
+
+Future versions could improve recommendation quality by incorporating collaborative filtering, content-based similarity, or retrieval-augmented generation once sufficient user interaction data is available.
 
 ---
 

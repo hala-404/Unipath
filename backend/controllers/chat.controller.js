@@ -17,23 +17,8 @@ const {
 } = require("../services/chatPrompt");
 
 async function resolveChatUserId(req) {
-  if (req.auth?.userId) {
-    const localUser = await ensureLocalUser(pool, req);
-    return localUser.id;
-  }
-
-  // Demo fallback when auth middleware/headers are not present.
-  const fallbackUser = await pool.query(
-    `SELECT id FROM users ORDER BY id ASC LIMIT 1`
-  );
-
-  if (!fallbackUser.rows.length) {
-    const fallbackError = new Error("No local users found for chat fallback");
-    fallbackError.status = 500;
-    throw fallbackError;
-  }
-
-  return fallbackUser.rows[0].id;
+  const localUser = await ensureLocalUser(pool, req);
+  return localUser.id;
 }
 
 const chatSchema = z.object({
