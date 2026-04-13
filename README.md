@@ -283,6 +283,34 @@ The suite also covers chat helper logic, chat prompt construction, and duplicate
 
 ---
 
+## Docker (Backend)
+
+The backend is containerized and can be built and run with Docker:
+
+```bash
+cd backend
+docker build -t unipath-backend .
+docker run -p 5050:5050 --env-file .env unipath-backend
+```
+
+The container exposes port `5050`, matching the backend's default `PORT`. Environment variables (database URL, OpenRouter key, etc.) should be supplied via `--env-file` or `-e` flags as shown above.
+
+---
+
+## Deployment
+
+The system is designed for cloud deployment, with each layer mapped to a standard managed service:
+
+- **Frontend:** Vercel or Netlify (static Vite build)
+- **Backend:** Railway or Render (Node.js service, deployable directly from the included `Dockerfile`)
+- **Database:** any managed PostgreSQL provider (Railway, Render, Supabase, Neon, etc.)
+
+All configuration is environment-variable driven (see `backend/.env` template above), so no code changes are required to move between local, staging, and production environments. Continuous integration runs on every push via GitHub Actions (`.github/workflows/backend-tests.yml`), which executes the backend test suite and a frontend production build.
+
+Due to the scope and timeframe of the graduation project, a live deployment was not finalized; the focus was on backend logic, recommendation quality, and the AI advisor pipeline. The architecture and packaging support direct deployment to the services listed above without modification.
+
+---
+
 ## How the AI Advisor Works
 
 The chat advisor (`backend/controllers/chat.controller.js`) is **not** a trained model — it is an LLM wrapper with rule-based routing around it:
