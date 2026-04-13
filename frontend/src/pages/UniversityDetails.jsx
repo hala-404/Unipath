@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "@clerk/react";
 import {
   ArrowLeft,
   CalendarClock,
@@ -92,6 +93,7 @@ function getRequiredDocuments(university) {
 }
 
 export default function UniversityDetails() {
+  const { getToken } = useAuth();
   const navigate = useNavigate();
   const { state } = useLocation();
   const { id } = useParams();
@@ -186,6 +188,7 @@ export default function UniversityDetails() {
       setTrackerMessage("");
       setTrackerError(false);
 
+      const token = await getToken();
       const url = `${API_BASE}/applications`;
 
       console.log("FINAL URL =", url);
@@ -194,6 +197,7 @@ export default function UniversityDetails() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           university_id: university.id,
