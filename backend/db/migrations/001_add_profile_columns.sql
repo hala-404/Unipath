@@ -1,20 +1,2 @@
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS full_name TEXT;
-
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS gpa NUMERIC(3,2);
-
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS preferred_city TEXT;
-
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS preferred_country TEXT;
-
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS preferred_program TEXT;
-
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS preferred_language TEXT;
-
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS max_tuition NUMERIC;
+-- Columns moved into 000_init_schema.sql
+-- This migration is kept for historical consistency.

@@ -1,18 +1,6 @@
 const pool = require("../db/pool");
 const { ensureLocalUser } = require("../utils/ensureLocalUser");
 
-async function ensureRecommendationColumns() {
-  await pool.query(`
-    ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS preferred_country TEXT
-  `);
-
-  await pool.query(`
-    ALTER TABLE users
-    ADD COLUMN IF NOT EXISTS max_tuition NUMERIC
-  `);
-}
-
 function normalizeText(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -162,7 +150,6 @@ function computeRecommendation(university, profile) {
 
 async function getRecommendations(req, res) {
   try {
-    await ensureRecommendationColumns();
     const localUser = await ensureLocalUser(pool, req);
     const user_id = localUser.id;
 
