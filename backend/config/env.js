@@ -8,10 +8,7 @@ function requireEnv(name) {
 
 function validateEnv() {
   requireEnv("PORT");
-  requireEnv("DB_HOST");
-  requireEnv("DB_PORT");
-  requireEnv("DB_NAME");
-  requireEnv("DB_USER");
+  requireEnv("DATABASE_URL");
   requireEnv("CLERK_SECRET_KEY");
   requireEnv("CLERK_PUBLISHABLE_KEY");
 
